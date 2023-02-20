@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>iiwa_run</name>
+    <version>0.0.1</version>
+    <description>The iiwa_run package</description>
+    <maintainer email="suraj.rathi00@gmail.com">Suraj Rathi</maintainer>
+    <license>BSD3</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <exec_depend>iiwa_gazebo</exec_depend>
+    <exec_depend>iiwa_tool_description</exec_depend>
+
+
+    <!-- The export tag contains other, unspecified, tags -->
+    <export>
+        <!-- Other tools can request additional information be placed here -->
+
+    </export>
+</package>
