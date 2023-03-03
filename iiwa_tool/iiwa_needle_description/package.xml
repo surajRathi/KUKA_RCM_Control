@@ -12,8 +12,12 @@
 
     <exec_depend>iiwa_description</exec_depend>
     <exec_depend>xacro</exec_depend>
-
+    <depend>gazebo_ros</depend>
+    <exec_depend>gazebo</exec_depend>
 
     <export>
+        <gazebo_ros gazebo_media_path="${prefix}"/>
+        <gazebo_ros gazebo_resource_path="${prefix}"/>
+        <gazebo_ros gazebo_model_path="${prefix}/models"/>
     </export>
 </package>
