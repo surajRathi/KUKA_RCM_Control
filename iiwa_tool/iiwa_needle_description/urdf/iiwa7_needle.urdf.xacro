@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+
+<!-- Here we define the robot, we named it "iiwa7_tool" -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="iiwa7_tool">
+    <!-- Import Rviz colors -->
+    <xacro:include filename="$(find iiwa_description)/urdf/materials.xacro"/>
+    <material name="StainlessSteel">
+        <color rgba="${202/255} ${204/255} ${206/255} 1.0"/>
+    </material>
+    <!--Import the iiwa7 macro -->
+    <xacro:include filename="$(find iiwa_description)/urdf/iiwa7.xacro"/>
+
+    <!--  Arguments for the iiwa7 macro  -->
+    <xacro:arg name="hardware_interface" default="PositionJointInterface"/>
+    <xacro:arg name="robot_name" default="iiwa"/>
+
+
+    <link name="world"/>
+
+    <gazebo reference="world">
+        <static>true</static>
+    </gazebo>
+
+    <!-- Here we insert an iiwa7 robot in the scene, it's origin is just on top of the box previously defined. You can use 0,0,0 if you don't have that. -->
+    <xacro:iiwa7 hardware_interface="$(arg hardware_interface)" robot_name="$(arg robot_name)" parent="world">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:iiwa7>
+
+    <!-- Tool properties -->
+    <property name="tool_mass" value="0.200"/>
+    <!-- TODO: The below properties have been hardcoded. -->
+    <!--<property name="tool_joint_offset" value="0.00 0.00 0.00"/>-->
+    <!--<property name="tool_link_offset" value="0.00 0.00 0.1275"/>-->
+
+    <!--  Here we define a dummy joint between the tip of the iiwa7 and the base of the tool.
+    There is no offset between the two, that means the tool is attached at the robot flange. -->
+    <joint name="tool_joint" type="fixed">
+        <parent link="iiwa_link_ee"/>
+        <child link="tool_link"/>
+        <origin xyz="0.00 0.00 0.00" rpy="0 0 0"/>
+    </joint>
+
+    <!-- Here we define the geometry of the tool. We designed the tool ourselves, so we have a mesh file that represents it.
+    Else, one can define it using a geometric representation that approximate it, like a cylinder (see commented lines) -->
+    <link name="tool_link">
+        <visual>
+            <material name="Grey"/>
+            <origin xyz="0 0 -0.005" rpy="0 ${-pi/2} 0"/>
+            <geometry>
+                <mesh filename="package://iiwa_needle_description/meshes/visual/needle.obj" scale="0.001 0.001 0.001"/>
+                <cylinder length="0.25" radius="0.008"/>
+            </geometry>
+            <material name="StainlessSteel"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 ${0.070 / 2}" rpy="0 0 0"/>
+            <geometry>
+                <!--<mesh filename="package://iiwa_needle_description/meshes/collision/needle.obj" scale="0.001 0.001 0.001"/>-->
+                <cylinder length="0.070" radius="0.004"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <!--  Here we define another dummy joint. It is placed at the end of the tool, so we can then attach a frame at its TCP for control -->
+    <joint name="tool_tip_joint" type="fixed">
+        <parent link="tool_link"/>
+        <child link="tool_link_ee"/>
+        <origin xyz="0.00 0.00 0.075" rpy="0 0 0"/>
+    </joint>
+
+    <!--  The TCP frame is here defined -->
+    <link name="tool_link_ee"/>
+</robot>
