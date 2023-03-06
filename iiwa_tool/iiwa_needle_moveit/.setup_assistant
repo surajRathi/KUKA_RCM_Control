@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: iiwa_needle_description
+    relative_path: urdf/iiwa7_needle.urdf.xacro
+    xacro_args: hardware_interface:=PositionJointInterface robot_name:=iiwa
+  SRDF:
+    relative_path: config/iiwa7_tool.srdf
+  CONFIG:
+    author_name: Suraj
+    author_email: suraj.rathi00@gmail.com
+    generated_timestamp: 1678089211
