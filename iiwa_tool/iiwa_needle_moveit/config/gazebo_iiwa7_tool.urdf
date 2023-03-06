@@ -477,5 +477,11 @@
     </joint>
     <!--  The TCP frame is here defined -->
     <link name="tool_link_ee" />
+    <link name="RCM" />
+    <joint name="RCM_JOINT" type="fixed">
+        <parent link="world" />
+        <child link="RCM" />
+        <origin rpy="0 0 0" xyz="0 -0.5 0.3" />
+    </joint>
 </robot>
 
