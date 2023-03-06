@@ -27,6 +27,8 @@
 
             <visual name='abdomen'>
                 <pose>0 0 0 0 0 0</pose>
+                <!-- 0: Opaque; 1: Transparent -->
+                <transparency>0.430</transparency>
                 <geometry>
                     <mesh>
                         <uri>file://meshes/collision/abdomen.obj</uri>
