@@ -45,18 +45,17 @@
     <link name="tool_link">
         <visual>
             <material name="Grey"/>
-            <origin xyz="0 0 -0.005" rpy="0 ${-pi/2} 0"/>
+            <origin xyz="0 0 0.0" rpy="0 ${-pi/2} 0"/>
             <geometry>
                 <mesh filename="package://iiwa_needle_description/meshes/visual/needle.obj" scale="0.001 0.001 0.001"/>
-                <cylinder length="0.25" radius="0.008"/>
             </geometry>
             <material name="StainlessSteel"/>
         </visual>
         <collision>
-            <origin xyz="0 0 ${0.070 / 2}" rpy="0 0 0"/>
+            <origin xyz="0 0 ${0.150 / 2}" rpy="0 0 0"/>
             <geometry>
                 <!--<mesh filename="package://iiwa_needle_description/meshes/collision/needle.obj" scale="0.001 0.001 0.001"/>-->
-                <cylinder length="0.070" radius="0.004"/>
+                <cylinder length="0.150" radius="0.004"/>
             </geometry>
         </collision>
     </link>
@@ -65,7 +64,7 @@
     <joint name="tool_tip_joint" type="fixed">
         <parent link="tool_link"/>
         <child link="tool_link_ee"/>
-        <origin xyz="0.00 0.00 0.075" rpy="0 0 0"/>
+        <origin xyz="0.00 0.00 0.150" rpy="0 0 0"/>
     </joint>
 
     <!--  The TCP frame is here defined -->
