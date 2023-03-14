@@ -6,6 +6,7 @@ add_compile_options(-std=c++17)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  rospy
   moveit_core  # ?
   moveit_ros_planning
   moveit_ros_planning_interface

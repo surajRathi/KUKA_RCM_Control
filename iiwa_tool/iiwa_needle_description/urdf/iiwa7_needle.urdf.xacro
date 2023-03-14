@@ -71,11 +71,25 @@
     <!--  The TCP frame is here defined -->
     <link name="tool_link_ee"/>
 
-    <link name="RCM"/>
-
-    <joint name="RCM_JOINT" type="fixed">
+    <link name="abdomen_base"/>
+    <joint name="abdomen_base_joint" type="fixed">
         <parent link="world"/>
+        <child link="abdomen_base"/>
+        <origin xyz="0 -0.5 0.0" rpy="0 0 0"/>
+    </joint>
+
+    <link name="RCM"/>
+    <joint name="RCM_JOINT" type="fixed">
+        <parent link="abdomen_base"/>
         <child link="RCM"/>
-        <origin xyz="0 -0.5 0.3" rpy="0 0 0"/>
+        <origin xyz="0 0.0 0.3" rpy="0 0 0"/>
+    </joint>
+
+
+    <link name="Insertion_Pose"/>
+    <joint name="INSERTION_JOINT" type="fixed">
+        <parent link="RCM"/>
+        <child link="Insertion_Pose"/>
+        <origin xyz="0 0 0" rpy="0 ${pi} 0"/>
     </joint>
 </robot>

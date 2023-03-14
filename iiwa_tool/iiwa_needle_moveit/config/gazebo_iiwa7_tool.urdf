@@ -483,5 +483,11 @@
         <child link="RCM" />
         <origin rpy="0 0 0" xyz="0 -0.5 0.3" />
     </joint>
+    <link name="Insertion_Pose" />
+    <joint name="INSERTION_JOINT" type="fixed">
+        <parent link="RCM" />
+        <child link="Insertion_Pose" />
+        <origin rpy="0 3.141592653589793 0" xyz="0 0 0" />
+    </joint>
 </robot>
 
