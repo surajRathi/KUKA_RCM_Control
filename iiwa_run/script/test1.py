@@ -2,6 +2,7 @@
 
 import sys
 from pathlib import Path
+from typing import Union
 
 import geometry_msgs.msg
 import moveit_commander
@@ -49,19 +50,29 @@ def main():
                                            rospy.Time(0), rospy.Duration(0))
 
     for i in range(10):
+        if rospy.is_shutdown():
+            break
         insertion_pose.pose.position.z += 0.05
         insertion_pose_transformed = tf2_geometry_msgs.do_transform_pose(insertion_pose, transform)
-        move_group.set_pose_target(insertion_pose_transformed.pose)
+        # move_group.set_pose_target(insertion_pose_transformed.pose)
+        (success, plan, planning_time, error_code,) = move_group.plan(
+            insertion_pose_transformed.pose)
+        rospy.loginfo(
+            f"{'Successfully' if success else 'Failed'} plan for z={insertion_pose.pose.position.z:.2f} " + (
+                f"in {planning_time:.4f}s, i.e {1.0 / planning_time:.2f} Hz" if success else f"with {error_code_to_string(error_code)}"
+            ))
 
-        success = move_group.go(wait=True)
+        if not success:
+            break
+        success = move_group.execute(plan, wait=True)
         move_group.stop()  # ensures that there is no residual movement
 
         # It is always good to clear your targets after planning with poses.
         # Note: there is no equivalent function for clear_joint_value_targets().
         move_group.clear_pose_targets()
-        print(f"{success}: t {insertion_pose.pose.position.z}")
 
         if not success:
+            rospy.logwarn(f"Failed to execute the plan.")
             break
 
 
@@ -94,6 +105,18 @@ def initialize_robot_and_scene(group_name, move_group, robot, scene, tf_buffer):
     joint_state.name = robot.get_active_joint_names(group=group_name)
     joint_state.position = [0.0] * len(robot.get_active_joint_names(group=group_name))  # Assumes each joint has 1dof
     move_group.go(joints=joint_state)
+    print("============ Reached Start Position")
+
+
+def error_code_to_string(code: Union[moveit_msgs.msg.MoveItErrorCodes, int]):
+    if isinstance(code, moveit_msgs.msg.MoveItErrorCodes):
+        code = code.val
+    codes = moveit_msgs.msg.MoveItErrorCodes
+    for name, val in codes.__dict__.items():
+        if val == code:
+            return name
+    rospy.logwarn(f"Invalid moveit error code: {code}")
+    return 'InvalidMOVEITError'
 
 
 if __name__ == '__main__':
