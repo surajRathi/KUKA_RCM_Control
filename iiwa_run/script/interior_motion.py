@@ -56,6 +56,8 @@ class Orchestrator:
                                                           -1.4368011875273539, -1.181244222973306, 2.0290526312957797,
                                                           -0.7484887519715488])
 
+        self.move_group.set_end_effector_link("tool_link_ee")
+
     def enact_constraint(self):
         abdomen_pose = geometry_msgs.msg.PoseStamped()
         abdomen_pose.header.frame_id = "abdomen_base"
@@ -99,10 +101,24 @@ class Orchestrator:
             self.plan_and_execute(target=self.transform_pose(insertion_pose),
                                   msg=f" for z={insertion_pose.pose.position.z:.2f}")
 
+            from copy import deepcopy
+
+            pose_list = [self.transform_pose(insertion_pose)]
             insertion_pose.pose.position.z = FIRST_DEPTH
+            pose_list.append(self.transform_pose(insertion_pose))
             self.move_group.set_start_state_to_current_state()
-            self.plan_and_execute(target=self.transform_pose(insertion_pose),
-                                  msg=f" for z={insertion_pose.pose.position.z:.2f}")
+
+            path, fraction = self.move_group.compute_cartesian_path(pose_list, 1e-3, 0.0)
+            print(fraction)
+
+            # def retime_trajectory(self, ref_state_in, traj_in, velocity_scaling_factor=1.0, acceleration_scaling_factor=1.0, algorithm="iterative_time_parameterization"):
+            # chrome-extension://oemmndcbldboiebfnladdacbdfmadadm/https://picknik.ai/docs/moveit_workshop_macau_2019/TOTG.pdfk
+            t_exec = self.execute(path)
+            if t_exec is not None:
+                rospy.loginfo(f'Executed trajectory in {t_exec}s.')
+            else:
+                rospy.loginfo(f'Trajectory execution failed.')
+                raise MoveitFailure()
 
 
 
