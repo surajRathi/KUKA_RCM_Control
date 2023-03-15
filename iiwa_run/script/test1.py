@@ -54,9 +54,8 @@ def main():
             break
         insertion_pose.pose.position.z += 0.05
         insertion_pose_transformed = tf2_geometry_msgs.do_transform_pose(insertion_pose, transform)
-        # move_group.set_pose_target(insertion_pose_transformed.pose)
-        (success, plan, planning_time, error_code,) = move_group.plan(
-            insertion_pose_transformed.pose)
+        move_group.set_pose_target(insertion_pose_transformed.pose)
+        (success, plan, planning_time, error_code,) = move_group.plan()
         rospy.loginfo(
             f"{'Successfully' if success else 'Failed'} plan for z={insertion_pose.pose.position.z:.2f} " + (
                 f"in {planning_time:.4f}s, i.e {1.0 / planning_time:.2f} Hz" if success else f"with {error_code_to_string(error_code)}"
