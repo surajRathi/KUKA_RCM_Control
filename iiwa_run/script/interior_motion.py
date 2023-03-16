@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import sys
 import time
+from copy import deepcopy
 from pathlib import Path
 from typing import Union, Optional
 
@@ -101,29 +102,46 @@ class Orchestrator:
             self.plan_and_execute(target=self.transform_pose(insertion_pose),
                                   msg=f" for z={insertion_pose.pose.position.z:.2f}")
 
-            from copy import deepcopy
-
             pose_list = [self.transform_pose(insertion_pose)]
             insertion_pose.pose.position.z = FIRST_DEPTH
             pose_list.append(self.transform_pose(insertion_pose))
             self.move_group.set_start_state_to_current_state()
 
-            path, fraction = self.move_group.compute_cartesian_path(pose_list, 1e-3, 0.0)
-            print(fraction)
+            self.cartesian_plan_and_execute(pose_list,
+                                            msg=f" for z={insertion_pose.pose.position.z:.2f}")
 
-            # def retime_trajectory(self, ref_state_in, traj_in, velocity_scaling_factor=1.0, acceleration_scaling_factor=1.0, algorithm="iterative_time_parameterization"):
-            # chrome-extension://oemmndcbldboiebfnladdacbdfmadadm/https://picknik.ai/docs/moveit_workshop_macau_2019/TOTG.pdfk
-            t_exec = self.execute(path)
-            if t_exec is not None:
-                rospy.loginfo(f'Executed trajectory in {t_exec}s.')
-            else:
-                rospy.loginfo(f'Trajectory execution failed.')
-                raise MoveitFailure()
+            pose = self.move_group.get_current_pose().pose
+            pose_list = [deepcopy(pose)]
+            x0 = pose.position.x
+            pose.position.x += 0.005
+            pose_list.append(pose)
+            self.move_group.set_start_state_to_current_state()
+            self.cartesian_plan_and_execute(pose_list,
+                                            msg=f" for Δx={pose.position.x - x0:.2f}")
 
 
 
         except MoveitFailure:
             rospy.logerr("Planning pipeline failed.")
+
+    def cartesian_plan_and_execute(self, pose_list, msg):
+        t_start = time.time()
+        path, fraction = self.move_group.compute_cartesian_path(pose_list, 1e-3, 0.0)
+        planning_time = time.time() - t_start
+        success = (1 - fraction) < 1e-9
+        rospy.loginfo(f"{'Successfully' if success else 'Failed'} plan {msg}" + (
+            f"in {planning_time:.4f}s, i.e {1.0 / planning_time:.2f} Hz" if success else f"with fraction: {fraction}"
+        ))
+        if not success:
+            raise MoveitFailure()
+        # def retime_trajectory(self, ref_state_in, traj_in, velocity_scaling_factor=1.0, acceleration_scaling_factor=1.0, algorithm="iterative_time_parameterization"):
+        # chrome-extension://oemmndcbldboiebfnladdacbdfmadadm/https://picknik.ai/docs/moveit_workshop_macau_2019/TOTG.pdfk
+        t_exec = self.execute(path)
+        if t_exec is not None:
+            rospy.loginfo(f'Executed trajectory in {t_exec}s.')
+        else:
+            rospy.loginfo(f'Trajectory execution failed.')
+            raise MoveitFailure()
 
     def plan_and_execute(self, target=None, msg=''):
         success, plan, planning_time, error_code = self.move_group.plan(target)
