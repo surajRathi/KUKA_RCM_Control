@@ -142,6 +142,38 @@ class Orchestrator:
             rospy.loginfo(f'Trajectory execution failed.')
             raise MoveitFailure()
 
+    def multiple_cartesian_plan_and_execute(self, pose_list, soft_timeout=5, msg=''):
+        t_start = time.time()
+        n_tries = 0.0
+        sum_fractions = 0.0
+        while (time.time() - t_start) < soft_timeout:
+            path, fraction = self.move_group.compute_cartesian_path(pose_list, 1e-3, 0.0)
+            n_tries += 1
+            sum_fractions += fraction
+            success = (1 - fraction) < 1e-9
+            if success:
+                break
+        else:
+            planning_time = time.time() - t_start
+            rospy.loginfo(
+                f"Timed out for plan {msg} in {planning_time:.2f}s and {n_tries} tries with average frac: {sum_fractions / n_tries:.4f}"
+            )
+            raise MoveitFailure()
+
+        planning_time = time.time() - t_start
+
+        rospy.loginfo(
+            f"Successfully planned {msg} in {planning_time:.2f}s and {n_tries} tries with fraction: {fraction:.4f}"
+
+        )
+
+        t_exec = self.execute(path)
+        if t_exec is not None:
+            rospy.loginfo(f'Executed trajectory in {t_exec}s.')
+        else:
+            rospy.loginfo(f'Trajectory execution failed.')
+            raise MoveitFailure()
+
 
 def insertion_routine(orc):
     orc.set_robot_state(orc.zero_joint_state)
@@ -189,11 +221,11 @@ def interior_motion_routine(orc):
         pose = orc.move_group.get_current_pose().pose
         pose_list = [deepcopy(pose)]
         x0 = pose.position.x
-        pose.position.x += 0.005
+        pose.position.x += 0.05
         pose_list.append(pose)
         orc.move_group.set_start_state_to_current_state()
-        orc.cartesian_plan_and_execute(pose_list,
-                                       msg=f" for Δx={pose.position.x - x0:.2f}")
+        orc.multiple_cartesian_plan_and_execute(pose_list,
+                                                msg=f" for Δx={pose.position.x - x0:.2f}")
     except MoveitFailure:
         rospy.logerr("Planning pipeline failed.")
 
