@@ -2,7 +2,7 @@
 import sys
 import time
 from copy import deepcopy
-from math import sqrt
+from math import sqrt, atan, cos, sin
 from pathlib import Path
 from typing import Union, Optional
 
@@ -65,6 +65,9 @@ class Orchestrator:
                                                          -1.0476528028679626])
 
         self.move_group.set_end_effector_link("tool_link_ee")
+
+        self.a = rospy.Publisher('/a', PoseStamped, queue_size=1)
+        self.b = rospy.Publisher('/b', PoseStamped, queue_size=1)
 
     def enact_constraint(self):
         abdomen_pose = geometry_msgs.msg.PoseStamped()
@@ -225,6 +228,8 @@ def interior_motion_routine(orc):
 
     try:
         pose = orc.move_group.get_current_pose().pose
+
+        orc.a.publish(orc.move_group.get_current_pose())
         pose_list = [deepcopy(pose)]
         x0 = pose.position.x
         pose.position.x += 0.05
@@ -234,15 +239,21 @@ def interior_motion_routine(orc):
         dy = target_point.y - insertion_point.y
         dz = target_point.z - insertion_point.z
         l = sqrt(dx ** 2 + dy ** 2 + dz ** 2)
-
+        dx /= l
+        dy /= l
+        dz /= l
         # orig_vec = (i, j, k)
         # orig_vec = (1, 0, 0)
         # next = (dx, dy, dz)
+        # cross = (0, -dz, dy)
+        # dot = dx
+
+        theta = atan(sqrt(dy ** 2 + dz ** 2) / dx)
         q = geometry_msgs.msg.Quaternion()
-        q.w = l + dx
+        q.w = cos(theta / 2)
         q.x = 0
-        q.y = -dz
-        q.z = dy
+        q.y = -dz * sin(theta / 2)
+        q.z = dy * sin(theta / 2)
 
         norm = sqrt(q.w ** 2 + q.x ** 2 + q.y ** 2 + q.z ** 2)
         q.w /= norm
@@ -251,13 +262,18 @@ def interior_motion_routine(orc):
         q.z /= norm
 
         pose.orientation = q
+
+        pp = orc.move_group.get_current_pose()
+        pp.pose = pose
+        orc.b.publish(pp)
         pose_list.append(pose)
         orc.move_group.set_start_state_to_current_state()
         orc.multiple_cartesian_plan_and_execute(pose_list,
                                                 msg=f" for Δx={pose.position.x - x0:.2f}")
     except MoveitFailure:
         rospy.logerr("Planning pipeline failed.")
-    Pose().orientation
+
+    rospy.spin()
 
 
 def main():
