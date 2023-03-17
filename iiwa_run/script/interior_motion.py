@@ -14,16 +14,18 @@ import rospkg
 import rospy
 import tf2_geometry_msgs
 import tf2_ros
-from geometry_msgs.msg import Pose, PoseStamped, Quaternion
+from geometry_msgs.msg import Pose, PoseStamped, Quaternion, Vector3
 from moveit_msgs.msg import RobotState
 from sensor_msgs.msg import JointState
-from std_msgs.msg import Header
+from std_msgs.msg import Header, ColorRGBA
 from tf.transformations import quaternion_about_axis, quaternion_multiply
+from visualization_msgs.msg import Marker
 
 INITIAL_HEIGHT = 0.300
 SECOND_HEIGHT = 0.100
-FIRST_DEPTH = 0.100
+FIRST_DEPTH = 0.05
 NEEDLE_LENGTH = 0.300
+FIRST_TRANSLATION = 0.05
 
 
 class MoveitFailure(Exception):
@@ -45,6 +47,8 @@ class Orchestrator:
 
         self.group_name = "All"
         self.move_group = moveit_commander.MoveGroupCommander(self.group_name)
+
+        self.fake_obs_pub = rospy.Publisher("/fake_obstacle", Marker, queue_size=1)
 
         self.enact_constraint()
 
@@ -71,7 +75,7 @@ class Orchestrator:
         self.a = rospy.Publisher('/a', PoseStamped, queue_size=1)
         self.b = rospy.Publisher('/b', PoseStamped, queue_size=1)
 
-    def enact_constraint(self):
+    def enact_constraint(self, add_to_scene=False):
         abdomen_pose = geometry_msgs.msg.PoseStamped()
         abdomen_pose.header.frame_id = "abdomen_base"
         transform1 = self.tf_buffer.lookup_transform(self.move_group.get_planning_frame(),
@@ -80,7 +84,24 @@ class Orchestrator:
         abdomen_pose_transformed = tf2_geometry_msgs.do_transform_pose(abdomen_pose, transform1)
         p = Path(rospkg.RosPack().get_path('iiwa_needle_description')) / "meshes" / "visual" / "abdomen.obj"
         self.scene.clear()
-        # self.scene.add_mesh("abdomen", abdomen_pose_transformed, str(p), size=(0.001, 0.001, 0.001))
+
+        if add_to_scene:
+            self.scene.add_mesh("abdomen", abdomen_pose_transformed, str(p), size=(0.001, 0.001, 0.001))
+        else:
+            msg = Marker()
+            msg.mesh_resource = "package://iiwa_needle_description/meshes/rviz/abdomen.stl"
+            msg.mesh_use_embedded_materials = False  # Need this to use textures for mesh
+            msg.color = ColorRGBA(r=0.5, g=0.5, b=0.5, a=0.5)
+            msg.header.frame_id = "abdomen_base"
+            msg.pose.orientation.w = 1.0
+
+            msg.ns = "btp_rcm"
+            msg.id = 17
+            msg.action = msg.ADD
+            msg.type = msg.MESH_RESOURCE
+            msg.scale = Vector3(10, 10, 10)
+
+            self.fake_obs_pub.publish(msg)
 
     def set_robot_state(self, state):
         # Note: using wall clock here to allow the joint_state to be published and received
@@ -242,7 +263,7 @@ def interior_motion_routine(orc):
         orc.a.publish(aa)
         pose_list = [deepcopy(pose)]
         x0 = pose.position.x
-        pose.position.x += 0.10
+        pose.position.x += FIRST_TRANSLATION
 
         target_point = pose.position
         dx = target_point.x - insertion_point.x
@@ -253,9 +274,6 @@ def interior_motion_routine(orc):
         dx /= l
         dy /= l
         dz /= l
-        # orig_vec = (i, j, k)
-        # orig_vec = (0, 0, 1)
-        # next = (dx, dy, dz)
 
         orig = np.array((0, 0, -1))  # This shouldnt be required !!
         new = np.array((dx, dy, dz))
@@ -264,12 +282,10 @@ def interior_motion_routine(orc):
         n_c = np.cross(orig, new)
         n_c /= np.linalg.norm(n_c)
         theta = np.arccos(np.dot(orig, new))
-        print(n_c, theta)
         q_rot = quaternion_about_axis(axis=n_c, angle=theta)
 
         o = insertion_pose.pose.orientation
         q_initial = np.array((o.x, o.y, o.z, o.w))
-        print(q_initial, q_rot)
         q_net = quaternion_multiply(q_initial, q_rot)
 
         pose.orientation = Quaternion(x=q_net[0], y=q_net[1], z=q_net[2], w=q_net[3])

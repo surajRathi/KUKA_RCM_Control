@@ -6,8 +6,9 @@ Panels:
       Expanded:
         - /MotionPlanning1/Planning Request1
         - /TF1/Frames1
+        - /Marker1/Status1
       Splitter Ratio: 0.5
-    Tree Height: 505
+    Tree Height: 793
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -282,15 +283,15 @@ Visualization Manager:
         iiwa_link_4:
           Value: false
         iiwa_link_5:
-          Value: true
+          Value: false
         iiwa_link_6:
-          Value: true
+          Value: false
         iiwa_link_7:
-          Value: true
+          Value: false
         iiwa_link_ee:
-          Value: true
+          Value: false
         tool_link:
-          Value: true
+          Value: false
         tool_link_ee:
           Value: true
         world:
@@ -355,8 +356,16 @@ Visualization Manager:
           Topic: /b
           Unreliable: false
           Value: true
-      Enabled: false
+      Enabled: true
       Name: DebugPoses
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /fake_obstacle
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -373,7 +382,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.8414005637168884
+      Distance: 0.9659700393676758
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -389,25 +398,25 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.14539843797683716
+      Pitch: 0.2553979754447937
       Target Frame: Insertion_Pose
-      Yaw: 5.413578510284424
+      Yaw: 5.483558177947998
     Saved: ~
 Window Geometry:
   Displays:
-    collapsed: false
-  Height: 1005
+    collapsed: true
+  Height: 1022
   Help:
     collapsed: false
-  Hide Left Dock: false
+  Hide Left Dock: true
   Hide Right Dock: true
   MotionPlanning:
     collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000001ca00000397fc0200000007fb000000100044006900730070006c006100790073010000003b00000288000000c700fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a0056006900650077007301000002c900000109000000a000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000001600000016fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006700000001d1000002010000016900ffffff0000059c0000039700000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000001ca000003a8fc0200000007fb000000100044006900730070006c006100790073000000003b000003a8000000c700fffffffb0000000800480065006c00700000000342000000bb0000006e00fffffffb0000000a00560069006500770073000000012b000000a0000000a000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000374000001890000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000001600000016fb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e0067000000015f000002740000016900ffffff000003ac000003a800000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
     collapsed: false
-  Width: 1900
-  X: 10
-  Y: 65
+  Width: 940
+  X: 967
+  Y: 45
