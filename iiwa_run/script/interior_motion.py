@@ -253,52 +253,64 @@ def interior_motion_routine(orc):
     insertion_pose = PoseStamped()
     insertion_pose.header.frame_id = "Insertion_Pose"
     insertion_pose.pose.orientation.w = 1.0
-    insertion_pose = orc.transform_pose_stamped(insertion_pose)
-    insertion_point = insertion_pose.pose.position
     try:
-        pose = orc.move_group.get_current_pose().pose
+        pose_list = [deepcopy(orc.move_group.get_current_pose().pose)]
+        target_pose = orc.move_group.get_current_pose().pose
+        x0 = target_pose.position.x
+        target_pose.position.x += FIRST_TRANSLATION
+        target_pose.orientation = get_target_orientation(orc.transform_pose_stamped(insertion_pose),
+                                                         target_pose.position)
+        pose_list.append(target_pose)
 
-        aa = deepcopy(insertion_pose)
-        aa.pose.orientation = Quaternion(w=1.0)
-        orc.a.publish(aa)
-        pose_list = [deepcopy(pose)]
-        x0 = pose.position.x
-        pose.position.x += FIRST_TRANSLATION
-
-        target_point = pose.position
-        dx = target_point.x - insertion_point.x
-        dy = target_point.y - insertion_point.y
-        dz = target_point.z - insertion_point.z
-
-        l = sqrt(dx ** 2 + dy ** 2 + dz ** 2)
-        dx /= l
-        dy /= l
-        dz /= l
-
-        orig = np.array((0, 0, -1))  # This shouldnt be required !!
-        new = np.array((dx, dy, dz))
-        new /= np.linalg.norm(new)
-
-        n_c = np.cross(orig, new)
-        n_c /= np.linalg.norm(n_c)
-        theta = np.arccos(np.dot(orig, new))
-        q_rot = quaternion_about_axis(axis=n_c, angle=theta)
-
-        o = insertion_pose.pose.orientation
-        q_initial = np.array((o.x, o.y, o.z, o.w))
-        q_net = quaternion_multiply(q_initial, q_rot)
-
-        pose.orientation = Quaternion(x=q_net[0], y=q_net[1], z=q_net[2], w=q_net[3])
         pp = orc.move_group.get_current_pose()
-        pp.pose = pose
+        pp.pose = target_pose
         orc.b.publish(pp)
-        pose_list.append(pose)
+
         orc.move_group.set_start_state_to_current_state()
-        orc.multiple_cartesian_plan_and_execute(pose_list, msg=f" for Δx={pose.position.x - x0:.2f}")
+        orc.multiple_cartesian_plan_and_execute(pose_list, msg=f" for Δx={target_pose.position.x - x0:.2f}")
+
+        pose_list = [deepcopy(orc.move_group.get_current_pose().pose)]
+        target_pose = orc.move_group.get_current_pose().pose
+        y0 = target_pose.position.y
+        target_pose.position.y -= FIRST_TRANSLATION
+        target_pose.orientation = get_target_orientation(orc.transform_pose_stamped(insertion_pose),
+                                                         target_pose.position)
+        pose_list.append(target_pose)
+
+        pp = orc.move_group.get_current_pose()
+        pp.pose = target_pose
+        orc.b.publish(pp)
+
+        orc.move_group.set_start_state_to_current_state()
+        orc.multiple_cartesian_plan_and_execute(pose_list, msg=f" for Δy={target_pose.position.y - y0:.2f}")
+
     except MoveitFailure:
         rospy.logerr("Planning pipeline failed.")
 
     rospy.spin()
+
+
+def get_target_orientation(insertion_pose, target_point):
+    insertion_point = insertion_pose.pose.position
+    dx = target_point.x - insertion_point.x
+    dy = target_point.y - insertion_point.y
+    dz = target_point.z - insertion_point.z
+    l = sqrt(dx ** 2 + dy ** 2 + dz ** 2)
+    dx /= l
+    dy /= l
+    dz /= l
+    orig = np.array((0, 0, -1))  # This shouldnt be required !!
+    new = np.array((dx, dy, dz))
+    new /= np.linalg.norm(new)
+    n_c = np.cross(orig, new)
+    n_c /= np.linalg.norm(n_c)
+    theta = np.arccos(np.dot(orig, new))
+    q_rot = quaternion_about_axis(axis=n_c, angle=theta)
+    o = insertion_pose.pose.orientation
+    q_initial = np.array((o.x, o.y, o.z, o.w))
+    q_net = quaternion_multiply(q_initial, q_rot)
+    quat = Quaternion(x=q_net[0], y=q_net[1], z=q_net[2], w=q_net[3])
+    return quat
 
 
 def main():
