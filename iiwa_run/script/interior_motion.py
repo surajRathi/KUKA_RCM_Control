@@ -2,13 +2,14 @@
 import sys
 import time
 from copy import deepcopy
-from math import atan, sqrt, cos, sin
+from math import sqrt
 from pathlib import Path
 from typing import Union, Optional
 
 import geometry_msgs.msg
 import moveit_commander
 import moveit_msgs.msg
+import numpy as np
 import rospkg
 import rospy
 import tf2_geometry_msgs
@@ -17,6 +18,7 @@ from geometry_msgs.msg import Pose, PoseStamped, Quaternion
 from moveit_msgs.msg import RobotState
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Header
+from tf.transformations import quaternion_about_axis, quaternion_multiply
 
 INITIAL_HEIGHT = 0.300
 SECOND_HEIGHT = 0.100
@@ -246,38 +248,37 @@ def interior_motion_routine(orc):
         dx = target_point.x - insertion_point.x
         dy = target_point.y - insertion_point.y
         dz = target_point.z - insertion_point.z
-        print(dx, dy, dz)
 
         l = sqrt(dx ** 2 + dy ** 2 + dz ** 2)
         dx /= l
         dy /= l
         dz /= l
         # orig_vec = (i, j, k)
-        # orig_vec = (0, 0, -1)
+        # orig_vec = (0, 0, 1)
         # next = (dx, dy, dz)
 
-        theta = atan(sqrt(dx ** 2 + dy ** 2) / dz)
-        q = geometry_msgs.msg.Quaternion()
-        q.w = cos(theta / 2)
-        q.x = -dy * sin(theta / 2)
-        q.y = dx * sin(theta / 2)
-        q.z = 0
+        orig = np.array((0, 0, -1))  # This shouldnt be required !!
+        new = np.array((dx, dy, dz))
+        new /= np.linalg.norm(new)
 
-        norm = sqrt(q.w ** 2 + q.x ** 2 + q.y ** 2 + q.z ** 2)
-        q.w /= norm
-        q.x /= norm
-        q.y /= norm
-        q.z /= norm
+        n_c = np.cross(orig, new)
+        n_c /= np.linalg.norm(n_c)
+        theta = np.arccos(np.dot(orig, new))
+        print(n_c, theta)
+        q_rot = quaternion_about_axis(axis=n_c, angle=theta)
 
-        pose.orientation = q
-        print(dx, dy, dz)
-        print(pose.orientation)
+        o = insertion_pose.pose.orientation
+        q_initial = np.array((o.x, o.y, o.z, o.w))
+        print(q_initial, q_rot)
+        q_net = quaternion_multiply(q_initial, q_rot)
+
+        pose.orientation = Quaternion(x=q_net[0], y=q_net[1], z=q_net[2], w=q_net[3])
         pp = orc.move_group.get_current_pose()
         pp.pose = pose
         orc.b.publish(pp)
         pose_list.append(pose)
         orc.move_group.set_start_state_to_current_state()
-        # orc.multiple_cartesian_plan_and_execute(pose_list, msg=f" for Δx={pose.position.x - x0:.2f}")
+        orc.multiple_cartesian_plan_and_execute(pose_list, msg=f" for Δx={pose.position.x - x0:.2f}")
     except MoveitFailure:
         rospy.logerr("Planning pipeline failed.")
 
