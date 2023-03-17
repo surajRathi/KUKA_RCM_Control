@@ -2,7 +2,7 @@
 import sys
 import time
 from copy import deepcopy
-from math import sqrt, atan, cos, sin
+from math import atan, sqrt, cos, sin
 from pathlib import Path
 from typing import Union, Optional
 
@@ -13,7 +13,7 @@ import rospkg
 import rospy
 import tf2_geometry_msgs
 import tf2_ros
-from geometry_msgs.msg import Pose, PoseStamped
+from geometry_msgs.msg import Pose, PoseStamped, Quaternion
 from moveit_msgs.msg import RobotState
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Header
@@ -93,6 +93,12 @@ class Orchestrator:
                                                     msg.header.frame_id,
                                                     rospy.Time(0), rospy.Duration(0))
         return tf2_geometry_msgs.do_transform_pose(msg, transform).pose
+
+    def transform_pose_stamped(self, msg: geometry_msgs.msg.PoseStamped) -> PoseStamped:
+        transform = self.tf_buffer.lookup_transform(self.move_group.get_planning_frame(),
+                                                    msg.header.frame_id,
+                                                    rospy.Time(0), rospy.Duration(0))
+        return tf2_geometry_msgs.do_transform_pose(msg, transform)
 
     # noinspection DuplicatedCode
     @staticmethod
@@ -224,36 +230,38 @@ def interior_motion_routine(orc):
     insertion_pose = PoseStamped()
     insertion_pose.header.frame_id = "Insertion_Pose"
     insertion_pose.pose.orientation.w = 1.0
-    insertion_point = orc.transform_pose(insertion_pose).position
-
+    insertion_pose = orc.transform_pose_stamped(insertion_pose)
+    insertion_point = insertion_pose.pose.position
     try:
         pose = orc.move_group.get_current_pose().pose
 
-        orc.a.publish(orc.move_group.get_current_pose())
+        aa = deepcopy(insertion_pose)
+        aa.pose.orientation = Quaternion(w=1.0)
+        orc.a.publish(aa)
         pose_list = [deepcopy(pose)]
         x0 = pose.position.x
-        pose.position.x += 0.05
+        pose.position.x += 0.10
 
         target_point = pose.position
         dx = target_point.x - insertion_point.x
         dy = target_point.y - insertion_point.y
         dz = target_point.z - insertion_point.z
+        print(dx, dy, dz)
+
         l = sqrt(dx ** 2 + dy ** 2 + dz ** 2)
         dx /= l
         dy /= l
         dz /= l
         # orig_vec = (i, j, k)
-        # orig_vec = (1, 0, 0)
+        # orig_vec = (0, 0, -1)
         # next = (dx, dy, dz)
-        # cross = (0, -dz, dy)
-        # dot = dx
 
-        theta = atan(sqrt(dy ** 2 + dz ** 2) / dx)
+        theta = atan(sqrt(dx ** 2 + dy ** 2) / dz)
         q = geometry_msgs.msg.Quaternion()
         q.w = cos(theta / 2)
-        q.x = 0
-        q.y = -dz * sin(theta / 2)
-        q.z = dy * sin(theta / 2)
+        q.x = -dy * sin(theta / 2)
+        q.y = dx * sin(theta / 2)
+        q.z = 0
 
         norm = sqrt(q.w ** 2 + q.x ** 2 + q.y ** 2 + q.z ** 2)
         q.w /= norm
@@ -262,14 +270,14 @@ def interior_motion_routine(orc):
         q.z /= norm
 
         pose.orientation = q
-
+        print(dx, dy, dz)
+        print(pose.orientation)
         pp = orc.move_group.get_current_pose()
         pp.pose = pose
         orc.b.publish(pp)
         pose_list.append(pose)
         orc.move_group.set_start_state_to_current_state()
-        orc.multiple_cartesian_plan_and_execute(pose_list,
-                                                msg=f" for Δx={pose.position.x - x0:.2f}")
+        # orc.multiple_cartesian_plan_and_execute(pose_list, msg=f" for Δx={pose.position.x - x0:.2f}")
     except MoveitFailure:
         rospy.logerr("Planning pipeline failed.")
 
