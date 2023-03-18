@@ -75,7 +75,7 @@ class Orchestrator:
         self.a = rospy.Publisher('/a', PoseStamped, queue_size=1)
         self.b = rospy.Publisher('/b', PoseStamped, queue_size=1)
 
-    def enact_constraint(self, add_to_scene=False):
+    def enact_constraint(self, add_to_scene=True):
         abdomen_pose = geometry_msgs.msg.PoseStamped()
         abdomen_pose.header.frame_id = "abdomen_base"
         transform1 = self.tf_buffer.lookup_transform(self.move_group.get_planning_frame(),
@@ -86,6 +86,7 @@ class Orchestrator:
         self.scene.clear()
 
         if add_to_scene:
+            self.scene.
             self.scene.add_mesh("abdomen", abdomen_pose_transformed, str(p), size=(0.001, 0.001, 0.001))
         else:
             msg = Marker()
@@ -308,7 +309,7 @@ def get_target_orientation(insertion_pose, target_point):
     q_rot = quaternion_about_axis(axis=n_c, angle=theta)
     o = insertion_pose.pose.orientation
     q_initial = np.array((o.x, o.y, o.z, o.w))
-    q_net = quaternion_multiply(q_initial, q_rot)
+    q_net = quaternion_multiply(q_rot, q_initial)
     quat = Quaternion(x=q_net[0], y=q_net[1], z=q_net[2], w=q_net[3])
     return quat
 
