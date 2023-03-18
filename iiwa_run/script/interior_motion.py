@@ -48,9 +48,9 @@ class Orchestrator:
         self.group_name = "All"
         self.move_group = moveit_commander.MoveGroupCommander(self.group_name)
 
-        self.fake_obs_pub = rospy.Publisher("/fake_obstacle", Marker, queue_size=1)
+        self.fake_obs_pub = rospy.Publisher("/fake_obstacle", Marker, queue_size=5, latch=True)
 
-        self.enact_constraint()
+        self.add_abdomen()
 
         active_joints = self.robot.get_active_joint_names(group=self.group_name)
         self.zero_joint_state = JointState(header=Header(stamp=rospy.Time.now()),
@@ -72,10 +72,9 @@ class Orchestrator:
 
         self.move_group.set_end_effector_link("tool_link_ee")
 
-        self.a = rospy.Publisher('/a', PoseStamped, queue_size=1)
-        self.b = rospy.Publisher('/b', PoseStamped, queue_size=1)
+        self.goal_pose = rospy.Publisher('/goal_pose', PoseStamped, queue_size=1)
 
-    def enact_constraint(self, add_to_scene=True):
+    def add_abdomen(self, as_collision_object=False):
         abdomen_pose = geometry_msgs.msg.PoseStamped()
         abdomen_pose.header.frame_id = "abdomen_base"
         transform1 = self.tf_buffer.lookup_transform(self.move_group.get_planning_frame(),
@@ -85,14 +84,19 @@ class Orchestrator:
         p = Path(rospkg.RosPack().get_path('iiwa_needle_description')) / "meshes" / "visual" / "abdomen.obj"
         self.scene.clear()
 
-        if add_to_scene:
-            self.scene.
+        msg = Marker()
+        msg.ns = "btp_rcm"
+        msg.id = 17
+        msg.action = msg.DELETE
+        self.fake_obs_pub.publish(msg)
+
+        if as_collision_object:
             self.scene.add_mesh("abdomen", abdomen_pose_transformed, str(p), size=(0.001, 0.001, 0.001))
         else:
             msg = Marker()
             msg.mesh_resource = "package://iiwa_needle_description/meshes/rviz/abdomen.stl"
             msg.mesh_use_embedded_materials = False  # Need this to use textures for mesh
-            msg.color = ColorRGBA(r=0.5, g=0.5, b=0.5, a=0.5)
+            msg.color = ColorRGBA(r=0.58, g=0.76, b=1.0, a=0.3)
             msg.header.frame_id = "abdomen_base"
             msg.pose.orientation.w = 1.0
 
@@ -100,7 +104,7 @@ class Orchestrator:
             msg.id = 17
             msg.action = msg.ADD
             msg.type = msg.MESH_RESOURCE
-            msg.scale = Vector3(10, 10, 10)
+            msg.scale = Vector3(0.001, 0.001, 0.001)
 
             self.fake_obs_pub.publish(msg)
 
@@ -219,11 +223,13 @@ def insertion_routine(orc):
     try:
         insertion_pose.pose.position.z = -INITIAL_HEIGHT
         orc.move_group.set_start_state(RobotState(joint_state=orc.zero_joint_state))
+        orc.goal_pose.publish(insertion_pose)
         orc.plan_and_execute(target=orc.transform_pose(insertion_pose),
                              msg=f" for z={insertion_pose.pose.position.z:.2f}")
 
         insertion_pose.pose.position.z = -SECOND_HEIGHT
         orc.move_group.set_start_state_to_current_state()
+        orc.goal_pose.publish(insertion_pose)
         orc.plan_and_execute(target=orc.transform_pose(insertion_pose),
                              msg=f" for z={insertion_pose.pose.position.z:.2f}")
 
@@ -231,18 +237,19 @@ def insertion_routine(orc):
         insertion_pose.pose.position.z = FIRST_DEPTH
         pose_list.append(orc.transform_pose(insertion_pose))
         orc.move_group.set_start_state_to_current_state()
-
+        orc.goal_pose.publish(insertion_pose)
         orc.cartesian_plan_and_execute(pose_list,
                                        msg=f" for z={insertion_pose.pose.position.z:.2f}")
 
-        pose = orc.move_group.get_current_pose().pose
-        pose_list = [deepcopy(pose)]
-        x0 = pose.position.x
-        pose.position.x += 0.005
-        pose_list.append(pose)
+        pose_stamped = orc.move_group.get_current_pose()
+        pose_list = [deepcopy(pose_stamped.pose)]
+        x0 = pose_stamped.pose.position.x
+        pose_stamped.pose.position.x += 0.005
+        pose_list.append(pose_stamped.pose)
         orc.move_group.set_start_state_to_current_state()
+        orc.goal_pose.publish(pose_stamped)
         orc.cartesian_plan_and_execute(pose_list,
-                                       msg=f" for Δx={pose.position.x - x0:.2f}")
+                                       msg=f" for Δx={pose_stamped.pose.position.x - x0:.2f}")
 
     except MoveitFailure:
         rospy.logerr("Planning pipeline failed.")
@@ -265,7 +272,7 @@ def interior_motion_routine(orc):
 
         pp = orc.move_group.get_current_pose()
         pp.pose = target_pose
-        orc.b.publish(pp)
+        orc.goal_pose.publish(pp)
 
         orc.move_group.set_start_state_to_current_state()
         orc.multiple_cartesian_plan_and_execute(pose_list, msg=f" for Δx={target_pose.position.x - x0:.2f}")
@@ -280,7 +287,7 @@ def interior_motion_routine(orc):
 
         pp = orc.move_group.get_current_pose()
         pp.pose = target_pose
-        orc.b.publish(pp)
+        orc.goal_pose.publish(pp)
 
         orc.move_group.set_start_state_to_current_state()
         orc.multiple_cartesian_plan_and_execute(pose_list, msg=f" for Δy={target_pose.position.y - y0:.2f}")
@@ -316,7 +323,7 @@ def get_target_orientation(insertion_pose, target_point):
 
 def main():
     orc = Orchestrator()
-    interior_motion_routine(orc)
+    insertion_routine(orc)
 
 
 if __name__ == '__main__':
