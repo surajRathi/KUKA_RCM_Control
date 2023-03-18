@@ -2,7 +2,6 @@
 import sys
 import time
 from copy import deepcopy
-from math import sqrt
 from pathlib import Path
 from typing import Union, Optional
 
@@ -298,27 +297,27 @@ def interior_motion_routine(orc):
     rospy.spin()
 
 
-def get_target_orientation(insertion_pose, target_point):
+def get_target_orientation(insertion_pose, target_point) -> Quaternion:
     insertion_point = insertion_pose.pose.position
     dx = target_point.x - insertion_point.x
     dy = target_point.y - insertion_point.y
     dz = target_point.z - insertion_point.z
-    l = sqrt(dx ** 2 + dy ** 2 + dz ** 2)
-    dx /= l
-    dy /= l
-    dz /= l
-    orig = np.array((0, 0, -1))  # This shouldnt be required !!
+
+    orig = np.array((0, 0, -1))
     new = np.array((dx, dy, dz))
     new /= np.linalg.norm(new)
+
     n_c = np.cross(orig, new)
     n_c /= np.linalg.norm(n_c)
+
     theta = np.arccos(np.dot(orig, new))
     q_rot = quaternion_about_axis(axis=n_c, angle=theta)
+
     o = insertion_pose.pose.orientation
     q_initial = np.array((o.x, o.y, o.z, o.w))
     q_net = quaternion_multiply(q_rot, q_initial)
-    quat = Quaternion(x=q_net[0], y=q_net[1], z=q_net[2], w=q_net[3])
-    return quat
+
+    return Quaternion(x=q_net[0], y=q_net[1], z=q_net[2], w=q_net[3])
 
 
 def main():
