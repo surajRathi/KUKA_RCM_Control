@@ -143,8 +143,8 @@ class InteriorMover:
 def main():
     mover = InteriorMover()
 
-    with mover as pt:
-        pt.x += mover.spec.rl1 / 2
+    # with mover as pt:
+    #     pt.x += mover.spec.rl1 / 2
 
     rospy.spin()
 
