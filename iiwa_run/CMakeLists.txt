@@ -10,8 +10,16 @@ find_package(catkin REQUIRED COMPONENTS
   moveit_core  # ?
   moveit_ros_planning
   moveit_ros_planning_interface
-  tf2_ros
+
   geometry_msgs
+  moveit_commander
+  moveit_msgs
+  sensor_msgs
+  std_msgs
+  tf
+  tf2_geometry_msgs
+  tf2_ros
+  visualization_msgs
   )
 
 find_package(Eigen3 REQUIRED)
@@ -22,7 +30,6 @@ catkin_package(
   #  LIBRARIES iiwa_run
   CATKIN_DEPENDS
   moveit_core
-  moveit_visual_tools
   moveit_ros_planning_interface
   #      interactive_markers
   #      tf2_geometry_msgs
