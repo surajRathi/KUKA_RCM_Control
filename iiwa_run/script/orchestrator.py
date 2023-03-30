@@ -95,7 +95,7 @@ class Orchestrator:
             msg = Marker()
             msg.mesh_resource = "package://iiwa_needle_description/meshes/rviz/abdomen.stl"
             msg.mesh_use_embedded_materials = False  # Need this to use textures for mesh
-            msg.color = ColorRGBA(r=0.58, g=0.76, b=1.0, a=0.3)
+            msg.color = ColorRGBA(r=0.58, g=0.76, b=1.0, a=0.15)
             msg.header.frame_id = "abdomen_base"
             msg.pose.orientation.w = 1.0
 

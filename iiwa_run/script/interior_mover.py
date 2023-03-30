@@ -1,10 +1,13 @@
 #! /usr/bin/python3
 import numpy as np
 import rospy
-from geometry_msgs.msg import Quaternion, PoseStamped, Point
+from geometry_msgs.msg import Quaternion, PoseStamped, Point, Vector3
+from std_msgs.msg import ColorRGBA
 from tf.transformations import quaternion_about_axis, quaternion_multiply
+from visualization_msgs.msg import Marker, MarkerArray
 
 from orchestrator import Orchestrator, MoveitFailure
+from specifications import create_specification
 
 
 class InteriorMover:
@@ -12,13 +15,56 @@ class InteriorMover:
         self.orc = Orchestrator() if o is None else o
         self.orc.set_robot_state(self.orc.inserted_joint_state)
 
-        self.insertion_pose = PoseStamped()
-        self.insertion_pose.header.frame_id = "Insertion_Pose"
-        self.insertion_pose.pose.orientation.w = 1.0
-        self.insertion_pose = self.orc.transform_pose(self.insertion_pose)
+        insertion_pose = PoseStamped()
+        insertion_pose.header.frame_id = "Insertion_Pose"
+        insertion_pose.pose.orientation.w = 1.0
+        self.insertion_pose = self.orc.transform_pose(insertion_pose)
 
         self.to_execute = False
         self.target_point = self.orc.move_group.get_current_pose().pose.position
+
+        # Note: All measurements in mm
+        self.spec = create_specification('/spec')
+        self.viz_pub = rospy.Publisher('/viz', MarkerArray, queue_size=1, latch=True)
+
+        self.publish_viz()
+
+    def publish_viz(self):
+        spec = self.spec
+
+        marker_array = MarkerArray()
+        marker_array.markers = []
+
+        # RCM
+        m = Marker()
+        m.header.frame_id = "Insertion_Pose"
+        m.header.stamp = rospy.Time.now()
+        m.ns = "viz"
+        m.id = 0
+        m.type = Marker.CYLINDER
+        m.action = Marker.ADD
+        m.pose.position = Point(x=0, y=0, z=spec.t / 2)
+        m.pose.orientation = Quaternion(w=1)
+        m.scale = Vector3(x=2 * spec.R, y=2 * spec.R, z=spec.t)
+        m.color = ColorRGBA(r=1, g=0, b=0, a=0.5)
+
+        marker_array.markers.append(m)
+
+        # Workspace
+        m = Marker()
+        m.header.frame_id = "Insertion_Pose"
+        m.header.stamp = rospy.Time.now()
+        m.ns = "viz"
+        m.id = 1
+        m.type = Marker.CYLINDER
+        m.action = Marker.ADD
+        m.pose.position = Point(x=0, y=0, z=spec.H1 + spec.H / 2)
+        m.pose.orientation = Quaternion(w=1)
+        m.scale = Vector3(x=2 * spec.rl1, y=2 * spec.rl1, z=spec.H)
+        m.color = ColorRGBA(r=0, g=1, b=0, a=0.3)
+        marker_array.markers.append(m)
+
+        self.viz_pub.publish(marker_array)
 
     def __enter__(self) -> Point:
         return self.target_point
@@ -74,19 +120,21 @@ def main():
     mover = InteriorMover()
 
     with mover as pt:
-        pt.z += 0.05
+        pt.x += mover.spec.rl1 / 2
 
-    with mover as pt:
-        pt.x += 0.025
+    rospy.spin()
 
-    with mover as pt:
-        pt.y += 0.025
-
-    with mover as pt:
-        pt.x -= 0.05
-
-    with mover as pt:
-        pt.y -= 0.05
+    # with mover as pt:
+    #     pt.x += 0.025
+    #
+    # with mover as pt:
+    #     pt.y += 0.025
+    #
+    # with mover as pt:
+    #     pt.x -= 0.05
+    #
+    # with mover as pt:
+    #     pt.y -= 0.05
 
 
 if __name__ == '__main__':

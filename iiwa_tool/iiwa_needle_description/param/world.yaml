@@ -1,0 +1,11 @@
+# All Dimensions in mm
+
+rcm:
+  r: 5
+  t: 2
+
+tool:
+  r: 4
+  L: 150
+  l1: 70
+  l2: 120
