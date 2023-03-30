@@ -47,7 +47,7 @@ class Orchestrator:
         self.group_name = "All"
         self.move_group = moveit_commander.MoveGroupCommander(self.group_name)
 
-        self.fake_obs_pub = rospy.Publisher("/fake_obstacle", Marker, queue_size=5, latch=True)
+        self.fake_obs_pub = rospy.Publisher("/viz/fake_obstacle", Marker, queue_size=5, latch=True)
 
         self.add_abdomen()
 
@@ -71,7 +71,7 @@ class Orchestrator:
 
         self.move_group.set_end_effector_link("tool_link_ee")
 
-        self.goal_pose = rospy.Publisher('/goal_pose', PoseStamped, queue_size=1)
+        self.goal_pose = rospy.Publisher('/viz/goal_pose', PoseStamped, queue_size=1)
 
     def add_abdomen(self, as_collision_object=False):
         abdomen_pose = geometry_msgs.msg.PoseStamped()
@@ -95,7 +95,7 @@ class Orchestrator:
             msg = Marker()
             msg.mesh_resource = "package://iiwa_needle_description/meshes/rviz/abdomen.stl"
             msg.mesh_use_embedded_materials = False  # Need this to use textures for mesh
-            msg.color = ColorRGBA(r=0.58, g=0.76, b=1.0, a=0.15)
+            msg.color = ColorRGBA(r=0.58, g=0.76, b=1.0, a=0.1)
             msg.header.frame_id = "abdomen_base"
             msg.pose.orientation.w = 1.0
 

@@ -4,8 +4,10 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /MotionPlanning1/Planning Request1
-        - /GoalPose1
+        - /TF1/Frames1
+        - /MotionPlanning1/Scene Robot1
+        - /Viz1
+        - /Viz1/Range1
       Splitter Ratio: 0.5
     Tree Height: 793
   - Class: rviz/Help
@@ -46,11 +48,13 @@ Visualization Manager:
       Frames:
         All Enabled: false
         Insertion_Pose:
-          Value: true
+          Value: false
         RCM:
           Value: false
+        Workspace_Range:
+          Value: false
         abdomen_base:
-          Value: true
+          Value: false
         iiwa_link_0:
           Value: true
         iiwa_link_1:
@@ -76,7 +80,7 @@ Visualization Manager:
         world:
           Value: true
       Marker Alpha: 1
-      Marker Scale: 0.20000000298023224
+      Marker Scale: 0.15000000596046448
       Name: TF
       Show Arrows: false
       Show Axes: true
@@ -86,7 +90,8 @@ Visualization Manager:
           abdomen_base:
             RCM:
               Insertion_Pose:
-                {}
+                Workspace_Range:
+                  {}
           iiwa_link_0:
             iiwa_link_1:
               iiwa_link_2:
@@ -316,35 +321,57 @@ Visualization Manager:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-        Robot Alpha: 0.5
+        Robot Alpha: 0.30000001192092896
         Show Robot Collision: false
         Show Robot Visual: true
       Value: true
       Velocity_Scaling_Factor: 0.1
-    - Class: rviz/Marker
+    - Class: rviz/Group
+      Displays:
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /viz/fake_obstacle
+          Name: PlannerVizMarkers
+          Namespaces:
+            btp_rcm: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/MarkerArray
+          Enabled: true
+          Marker Topic: /viz/volumes
+          Name: MarkerArray
+          Namespaces:
+            viz: true
+          Queue Size: 100
+          Value: true
+        - Alpha: 0.6000000238418579
+          Axes Length: 0.05999999865889549
+          Axes Radius: 0.004999999888241291
+          Class: rviz/Pose
+          Color: 0; 255; 0
+          Enabled: true
+          Head Length: 0.30000001192092896
+          Head Radius: 0.10000000149011612
+          Name: GoalPose
+          Queue Size: 10
+          Shaft Length: 1
+          Shaft Radius: 0.03999999910593033
+          Shape: Axes
+          Topic: /viz/goal_pose
+          Unreliable: false
+          Value: true
+        - Alpha: 0.20000000298023224
+          Buffer Length: 1
+          Class: rviz/Range
+          Color: 76; 255; 0
+          Enabled: true
+          Name: Range
+          Queue Size: 10
+          Topic: /viz/range
+          Unreliable: false
+          Value: true
       Enabled: true
-      Marker Topic: /fake_obstacle
-      Name: PlannerVizMarkers
-      Namespaces:
-        btp_rcm: true
-      Queue Size: 100
-      Value: true
-    - Alpha: 0.6000000238418579
-      Axes Length: 0.05999999865889549
-      Axes Radius: 0.004999999888241291
-      Class: rviz/Pose
-      Color: 0; 255; 0
-      Enabled: true
-      Head Length: 0.30000001192092896
-      Head Radius: 0.10000000149011612
-      Name: GoalPose
-      Queue Size: 10
-      Shaft Length: 1
-      Shaft Radius: 0.03999999910593033
-      Shape: Axes
-      Topic: /goal_pose
-      Unreliable: false
-      Value: true
+      Name: Viz
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -361,7 +388,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.9915144443511963
+      Distance: 0.7211828827857971
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -377,9 +404,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.22039790451526642
+      Pitch: 0.3453974723815918
       Target Frame: Insertion_Pose
-      Yaw: 5.558559417724609
+      Yaw: 5.633563041687012
     Saved: ~
 Window Geometry:
   Displays:

@@ -1,7 +1,9 @@
 #! /usr/bin/python3
 import numpy as np
 import rospy
-from geometry_msgs.msg import Quaternion, PoseStamped, Point, Vector3
+import tf2_ros
+from geometry_msgs.msg import Quaternion, PoseStamped, Point, Vector3, TransformStamped
+from sensor_msgs.msg import Range
 from std_msgs.msg import ColorRGBA
 from tf.transformations import quaternion_about_axis, quaternion_multiply
 from visualization_msgs.msg import Marker, MarkerArray
@@ -25,11 +27,33 @@ class InteriorMover:
 
         # Note: All measurements in mm
         self.spec = create_specification('/spec')
-        self.viz_pub = rospy.Publisher('/viz', MarkerArray, queue_size=1, latch=True)
+        self.viz_pub = rospy.Publisher('/viz/volumes', MarkerArray, queue_size=1, latch=True)
+        self.viz_range_pub = rospy.Publisher('/viz/range', Range, queue_size=1, latch=True)
+        self.viz_tf = tf2_ros.StaticTransformBroadcaster()
 
         self.publish_viz()
 
     def publish_viz(self):
+        trans = TransformStamped()
+        trans.header.stamp = rospy.Time.now()
+        trans.header.frame_id = "Insertion_Pose"
+        trans.child_frame_id = "Workspace_Range"
+        trans.transform.translation.z = -self.spec.lb
+        trans.transform.rotation.y = -1 / np.sqrt(2)
+        trans.transform.rotation.w = 1 / np.sqrt(2)
+        self.viz_tf.sendTransform(trans)
+
+        r = Range()
+        r.header.frame_id = "Workspace_Range"
+        r.header.stamp = rospy.Time.now()
+        r.min_range = 0
+        r.max_range = 2
+        r.radiation_type = r.ULTRASOUND  # ???
+        # r.range = self.spec.l2
+        r.range = self.spec.H1 + self.spec.H
+        r.field_of_view = 2 * self.spec.theta
+        self.viz_range_pub.publish(r)
+
         spec = self.spec
 
         marker_array = MarkerArray()
