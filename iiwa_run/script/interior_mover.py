@@ -143,6 +143,10 @@ class InteriorMover:
 def main():
     mover = InteriorMover()
 
+    with mover as pt:
+        pt.x += 0.005
+
+
     # with mover as pt:
     #     pt.x += mover.spec.rl1 / 2
 
