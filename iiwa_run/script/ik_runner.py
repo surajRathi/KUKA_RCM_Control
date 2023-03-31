@@ -1,4 +1,7 @@
 #!/usr/bin/python3
+import sys
+from typing import Tuple
+
 import kdl_parser_py.urdf as kdl_parser
 import numpy as np
 from PyKDL import ChainFkSolverPos_recursive, JntArray, Frame, ChainIkSolverPos_NR, ChainIkSolverVel_pinv, Vector, \
@@ -10,7 +13,29 @@ from no_print import NoPrint
 
 class IKOrchestrator:
     def __init__(self):
-        # Insertion Position in World: [0.000, -0.500, 0.300]
+        self.pos_delta = 2e-3
+
+        filename = f"{sys.argv[0][:sys.argv[0].find('/')]}/robot.urdf"
+        # Set up KDL
+        with NoPrint(stdout=True, stderr=True):
+            success, tree = kdl_parser.treeFromFile(filename)
+            # success, tree = kdl_parser.treeFromFile("/home/suraj/ws/src/btp/iiwa_run/robot.urdf")
+            # success, tree = kdl_parser.treeFromParam("/robot_description")
+        if not success:
+            print("Could not load the kdl_tree from the urdf.")
+            return
+
+        self.chain = tree.getChain('iiwa_link_0', 'tool_link_ee')
+
+        self.fk_solver = ChainFkSolverPos_recursive(self.chain)
+
+        # ChainIkSolverVel_pinv(chain: Chain, eps: float = 1e-05, maxiter: int = 150)
+        self.ikv_solver = ChainIkSolverVel_pinv(self.chain)
+
+        # ChainIkSolverPos_NR(chain: Chain, fksolver: ChainFkSolverPos, iksolver: ChainIkSolverVel, maxiter: int = 100, eps: float = epsilon):
+        self.ik_solver = ChainIkSolverPos_NR(self.chain, self.fk_solver, self.ikv_solver)
+
+        # Set up reference pose
         self.insertion_pt = Vector()
         self.insertion_pt.x(0.0)
         self.insertion_pt.y(-0.5)
@@ -23,9 +48,6 @@ class IKOrchestrator:
                                   1.136261558580683, -1.0476528028679626]
 
         self.nj = len(self.zero_state_joints)
-
-    def do_ik(self, old_joints, new_frame):
-        pass
 
     def get_target_orientation(self, target_point: Vector) -> Rotation:
         dx = target_point.x() - self.insertion_pt.x()
@@ -58,69 +80,67 @@ class IKOrchestrator:
 
         return Rotation().Quaternion(x=q_net[0], y=q_net[1], z=q_net[2], w=q_net[3])
 
+    def do_ik(self, j_in: JntArray, f_target: Frame) -> Tuple[float, float, float, JntArray]:
+        f_t = f_target
+
+        # Check that initial joints are correct
+        f_init = Frame()
+        ret = (self.fk_solver.JntToCart(q_in=j_in, p_out=f_init))
+        if ret != 0:
+            return np.inf, np.inf, np.inf, JntArray(0)
+
+        # Sum of squares of position error
+        position_error = \
+            (f_init.p.x() - f_t.p.x()) ** 2 + (f_init.p.y() - f_t.p.y()) ** 2 + (f_init.p.z() - f_t.p.z()) ** 2
+        if position_error > 2 * self.pos_delta:
+            return np.inf, np.inf, np.inf, JntArray(0)
+
+        # Do the inverse kinematics
+        j_ik = JntArray(self.nj)
+        ret = self.ik_solver.CartToJnt(j_in, f_t, j_ik)
+        if ret != 0:
+            return np.inf, np.inf, np.inf, JntArray(0)
+
+        # Sum of square of delta joint angle
+        joint_diff = 0
+        for i in range(self.nj):
+            joint_diff += (j_ik[i] - j_in[i]) ** 2
+
+            # Fk on the joings
+        f_c = Frame()
+        ret = (self.fk_solver.JntToCart(q_in=j_ik, p_out=f_c))
+        if ret != 0:
+            return np.inf, np.inf, np.inf, JntArray(0)
+
+        # Sum of squares of position error
+        position_error = (f_c.p.x() - f_t.p.x()) ** 2 + (f_c.p.y() - f_t.p.y()) ** 2 + (f_c.p.z() - f_t.p.z()) ** 2
+
+        # Angle between the orientations
+        dot_prod = 0
+        for d, d_c in zip(f_t.M.GetQuaternion(), f_c.M.GetQuaternion()):
+            dot_prod += d * d_c
+        orientation_error = np.arccos(dot_prod)
+
+        return joint_diff, position_error, orientation_error, j_ik
+
 
 def main():
     orc = IKOrchestrator()
-
-    with NoPrint(stdout=True, stderr=True):
-        success, tree = kdl_parser.treeFromFile("/home/suraj/ws/src/btp/iiwa_run/robot.urdf")
-        # success, tree = kdl_parser.treeFromParam("/robot_description")
-    if not success:
-        print("Could not load the kdl_tree from the urdf.")
-        return
-
-    chain = tree.getChain('iiwa_link_0', 'tool_link_ee')
-
-    fk_solver = ChainFkSolverPos_recursive(chain)
-
-    # ChainIkSolverVel_pinv(chain: Chain, eps: float = 1e-05, maxiter: int = 150)
-    ikv_solver = ChainIkSolverVel_pinv(chain)
-
-    # ChainIkSolverPos_NR(chain: Chain, fksolver: ChainFkSolverPos, iksolver: ChainIkSolverVel, maxiter: int = 100, eps: float = epsilon):
-    ik_solver = ChainIkSolverPos_NR(chain, fk_solver, ikv_solver)
 
     # JntArray(size: int) or JntArray(arg: JntArray)
     j_start = JntArray(orc.nj)
     for i, val in enumerate(orc.zero_state_joints):
         j_start[i] = val
 
-    # http://docs.ros.org/en/hydro/api/orocos_kdl/html/classKDL_1_1ChainFkSolverPos__recursive.html
-    # JntToCart(self, q_in: JntArray, p_out: Frame, segmentNr: int = -1):
-    f = Frame()
-
-    j_ik = JntArray(orc.nj)
     f = Frame()
     f.p = orc.insertion_pt
     f.p.z(f.p.z() - 0.1)
     f.p.x(f.p.x() + 0.005)
     f.M = orc.get_target_orientation(f.p)
 
-    # CartToJnt(self, q_init: JntArray, p_in: Frame, q_out: JntArray)
-    ret = ik_solver.CartToJnt(j_start, f, j_ik)
-    if ret != 0:
-        print("Ik failed")
-        return
+    joint_diff, pos_error, orien_error, joints = orc.do_ik(j_start, f)
 
-    joint_diff = 0
-    for i, val in enumerate(orc.zero_state_joints):
-        joint_diff += (j_ik[i] - val) ** 2
-
-    print(f"{joint_diff=}")
-
-    f_c = Frame()
-    ret = (fk_solver.JntToCart(q_in=j_ik, p_out=f_c))
-    if ret != 0:
-        print("Fk failed")
-        return
-
-    position_error = (f_c.p.x() - f.p.x()) ** 2 + (f_c.p.y() - f.p.y()) ** 2 + (f_c.p.z() - f.p.z()) ** 2
-    print(f"{position_error=}")
-
-    dot_prod = 0
-    for d, d_c in zip(f.M.GetQuaternion(), f_c.M.GetQuaternion()):
-        dot_prod += d * d_c
-    orientation_error = np.arccos(dot_prod)
-    print(f"{orientation_error=}")
+    print(f"{joint_diff=:.2E}\t{pos_error=:.2E}\t{orien_error=:.2E}")
 
 
 if __name__ == '__main__':
