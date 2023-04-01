@@ -1,29 +1,102 @@
 #!/usr/bin/python3
 import sys
+from pathlib import Path
+from queue import Queue
 from typing import Tuple
 
 import kdl_parser_py.urdf as kdl_parser
 import numpy as np
+import tqdm
 from PyKDL import ChainFkSolverPos_recursive, JntArray, Frame, ChainIkSolverPos_NR, ChainIkSolverVel_pinv, Vector, \
     Rotation
 from tf.transformations import quaternion_about_axis, quaternion_multiply
 
 from no_print import NoPrint
+from specifications import from_yaml, Specifications
+
+
+class Lim:
+    def __init__(self, mi, ma):
+        self.min = mi
+        self.max = ma
+
+        self.delta = ma - mi
+
+    def __call__(self, val):
+        return self.min <= val <= self.max
+
+    def __str__(self):
+        return f"({self.min}->{self.max})"
+
+
+class Indexer:
+    """ Maps the real world xyz coordinates to the indexes for the backing array. """
+
+    def __init__(self, spec: Specifications, res: float):
+        s = spec.rl1 / np.sqrt(2)
+        self.res = res
+
+        self.x0, self.y0, self.z0 = spec.rcm
+        self.z0 -= (spec.H1 + spec.H)
+
+        self.xoff = s / 2
+        self.yoff = s / 2
+        self.zoff = 0
+
+        self.xlim = Lim(self.x0 - s / 2, self.x0 + s / 2)
+        self.ylim = Lim(self.y0 - s / 2, self.y0 + s / 2)
+        self.zlim = Lim(self.z0, self.z0 + spec.H)
+
+        self.shape = (
+            int(np.floor(self.xlim.delta / res)),
+            int(np.floor(self.ylim.delta / res)),
+            int(np.floor(self.zlim.delta / res)),
+        )
+
+        self.xilim = Lim(0, self.shape[0] - 1)
+        self.yilim = Lim(0, self.shape[1] - 1)
+        self.zilim = Lim(0, self.shape[2] - 1)
+
+    def is_index_valid(self, xi, yi, zi):
+        return self.xilim(xi) and self.yilim(yi) and self.zilim(zi)
+
+    def index_to_coord(self, xi, yi, zi):
+        if self.xilim(xi) and self.yilim(yi) and self.zilim(zi):
+            return (
+                xi * self.res + self.x0 - self.xoff,
+                yi * self.res + self.y0 - self.yoff,
+                zi * self.res + self.z0 - self.zoff,
+            )
+        raise IndexError(f"{xi}\t{yi}\t{zi}")
+
+    def coord_to_index(self, x, y, z):
+        if self.xlim(x) and self.ylim(y) and self.zlim(z):
+            return (
+                int(np.floor(((x - self.x0) + self.xoff) / self.res)),
+                int(np.floor(((y - self.y0) + self.yoff) / self.res)),
+                int(np.floor(((z - self.z0) + self.zoff) / self.res)),
+            )
+
+        raise IndexError(f"{x}\t{y}\t{z}")
 
 
 class IKOrchestrator:
-    def __init__(self):
-        self.pos_delta = 2e-3
+    def __init__(self, resolution=2e-3):
+        base_dir = Path(sys.argv[0]).parent.parent
 
-        filename = f"{sys.argv[0][:sys.argv[0].find('/')]}/robot.urdf"
+        self.spec = from_yaml(base_dir / "data" / "world.yaml")
+        self.initial_joint_states = self.spec.rest_joint_states
+        self.nj = len(self.initial_joint_states)
+
+        self.res = resolution
+        self.indexer = Indexer(self.spec, self.res)
+
         # Set up KDL
         with NoPrint(stdout=True, stderr=True):
-            success, tree = kdl_parser.treeFromFile(filename)
-            # success, tree = kdl_parser.treeFromFile("/home/suraj/ws/src/btp/iiwa_run/robot.urdf")
-            # success, tree = kdl_parser.treeFromParam("/robot_description")
+            success, tree = kdl_parser.treeFromFile(base_dir / "data" / "robot.urdf")
         if not success:
             print("Could not load the kdl_tree from the urdf.")
-            return
+            raise RuntimeError()
 
         self.chain = tree.getChain('iiwa_link_0', 'tool_link_ee')
 
@@ -36,18 +109,68 @@ class IKOrchestrator:
         self.ik_solver = ChainIkSolverPos_NR(self.chain, self.fk_solver, self.ikv_solver)
 
         # Set up reference pose
-        self.insertion_pt = Vector()
-        self.insertion_pt.x(0.0)
-        self.insertion_pt.y(-0.5)
-        self.insertion_pt.z(0.3)
-
+        self.insertion_pt = Vector(*self.spec.rcm)
+        # TODO: Dont Hardcode! However the rest of the code relies on this orientation being valid.
         self.insertion_rot = Rotation().Quaternion(x=0.000, y=1.000, z=0.000, w=0.000)
 
-        self.zero_state_joints = [0.7974687140058682, -0.7059608762250215, -2.0557765983620215, -1.7324525588466884,
-                                  -0.685107459772449,
-                                  1.136261558580683, -1.0476528028679626]
+        array_shape = tuple(list(self.indexer.shape) + [3 + self.nj])
+        frontier_array_file = base_dir / "run" / "front.csv"
+        data_array_file = base_dir / "run" / "out.npy"
 
-        self.nj = len(self.zero_state_joints)
+        if not Path(data_array_file).exists():
+            # arr = np.zeros(array_shape, dtype=np.float32) + np.nan
+            arr = np.full(array_shape, np.nan, dtype=np.float32)
+            data = [0.0, 0.0, 0.0] + list(self.initial_joint_states)
+            arr[self.indexer.coord_to_index(self.indexer.x0, self.indexer.y0, self.indexer.z0)] = data
+            np.save(str(data_array_file), arr)
+        else:
+            print(f"Resuming is not supported! File {data_array_file} already exists.")
+            raise RuntimeError()
+
+        # self.arr: np.memmap = np.memmap(str(data_array_file), mode='w+', shape=tuple(array_shape), dtype=np.float32)
+        # self.arr: np.memmap = np.memmap(data_array_file, mode='w+', shape=array_shape, dtype=np.float32, offset=0)
+        self.arr: np.memmap = np.load(str(data_array_file), mmap_mode='r+')
+
+        self.N = array_shape[0] * array_shape[1] * array_shape[2]
+        assert (self.arr[:, :, :, 0].ravel().shape[0] == self.N), f"{self.arr.shape}\t{array_shape}\t{self.N}"
+        assert (array_shape == self.arr.shape)
+
+        self.done = np.count_nonzero(~np.isnan(self.arr[:, :, :, 0]))
+        # TODO: Floodfill, get next algo, and run the floodfill.
+
+        self.frontier = Queue()
+        self.add_next(self.indexer.coord_to_index(self.indexer.x0, self.indexer.y0, self.indexer.z0))
+
+    def run(self):
+        with tqdm.tqdm(total=self.N) as bar:
+            bar.update(self.done)
+            while not self.frontier.empty():
+                ind, ind_p = self.frontier.get()
+
+                # get parent joints
+                pj = self.arr[ind_p][3:]
+
+                j_start = JntArray(self.nj)
+                for i, val in enumerate(pj):
+                    j_start[i] = val
+
+                f = Frame()
+                f.p = Vector(*self.indexer.index_to_coord(*ind))
+                f.M = self.get_target_orientation(f.p)
+
+                # ik
+                joint_diff, pos_error, orien_error, joints = self.do_ik(j_start, f)
+
+                # save data
+                self.arr[ind] = [joint_diff, pos_error, orien_error] + [joints[i] for i in range(self.nj)]
+
+                # print(f"Initial:\t{orc.indexer.x0:.2f}\t{orc.indexer.y0:.2f}\t{orc.indexer.z0:.2f}")
+                # print(f"Final  :\t{f.p.x():.2f}\t{f.p.y():.2f}\t{f.p.z():.2f}")
+                # print(f"{joint_diff=:.2E}\t{pos_error=:.2E}\t{orien_error=:.2E}")
+
+                self.add_next(ind)
+                bar.update(1)
+                bar.set_description(f"F: {self.frontier.qsize()}")
 
     def get_target_orientation(self, target_point: Vector) -> Rotation:
         dx = target_point.x() - self.insertion_pt.x()
@@ -92,7 +215,7 @@ class IKOrchestrator:
         # Sum of squares of position error
         position_error = \
             (f_init.p.x() - f_t.p.x()) ** 2 + (f_init.p.y() - f_t.p.y()) ** 2 + (f_init.p.z() - f_t.p.z()) ** 2
-        if position_error > 2 * self.pos_delta:
+        if position_error > 2 * self.res:
             return np.inf, np.inf, np.inf, JntArray(0)
 
         # Do the inverse kinematics
@@ -106,7 +229,7 @@ class IKOrchestrator:
         for i in range(self.nj):
             joint_diff += (j_ik[i] - j_in[i]) ** 2
 
-            # Fk on the joings
+            # Fk on the joints
         f_c = Frame()
         ret = (self.fk_solver.JntToCart(q_in=j_ik, p_out=f_c))
         if ret != 0:
@@ -119,28 +242,28 @@ class IKOrchestrator:
         dot_prod = 0
         for d, d_c in zip(f_t.M.GetQuaternion(), f_c.M.GetQuaternion()):
             dot_prod += d * d_c
+        if dot_prod > 1:
+            dot_prod = 1.0
         orientation_error = np.arccos(dot_prod)
 
         return joint_diff, position_error, orientation_error, j_ik
 
+    def add_next(self, ind: Tuple[int, int, int]):
+        index = list(ind)
+        for ax in (0, 1, 2):
+            for val in (-1, 1):
+                index[ax] += val
+                if self.indexer.is_index_valid(*index):
+                    ind_t = tuple(index)
+                    if np.isnan(self.arr[ind_t][0]):
+                        self.frontier.put((ind_t, ind))
+                        self.arr[ind_t][0] = -1
+                index[ax] -= val
+
 
 def main():
     orc = IKOrchestrator()
-
-    # JntArray(size: int) or JntArray(arg: JntArray)
-    j_start = JntArray(orc.nj)
-    for i, val in enumerate(orc.zero_state_joints):
-        j_start[i] = val
-
-    f = Frame()
-    f.p = orc.insertion_pt
-    f.p.z(f.p.z() - 0.1)
-    f.p.x(f.p.x() + 0.005)
-    f.M = orc.get_target_orientation(f.p)
-
-    joint_diff, pos_error, orien_error, joints = orc.do_ik(j_start, f)
-
-    print(f"{joint_diff=:.2E}\t{pos_error=:.2E}\t{orien_error=:.2E}")
+    orc.run()
 
 
 if __name__ == '__main__':

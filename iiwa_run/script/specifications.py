@@ -1,9 +1,12 @@
 from dataclasses import dataclass, field
 from math import atan, sqrt, asin, pi, sin, cos
+from typing import Tuple
 
 
 @dataclass
 class Specifications:
+    rcm: Tuple[float, float, float]
+    rest_joint_states: Tuple[float, ...]
     R: float
     t: float
     r: float
@@ -36,16 +39,41 @@ class Specifications:
         # self.V = pi * self.rl1 ** 2 * self.H
 
 
-import rospy
-
-
 # This assumes that a ROS node has been inited.
-def create_specification(root="/spec"):
+def from_param(root="/spec"):
+    import rospy
+
     def get(name):
         return rospy.get_param(f"{root}/{name}")
 
+    def err(k):
+        rospy.logfatal(f"Specifications requires the {k.args[0]} param to be set.")
+
+    return _load_impl(get, err)
+
+
+def from_yaml(filename="./world.yaml"):
+    import yaml
+    yml = yaml.safe_load(open(filename, 'r').read())
+
+    def get(name):
+        el = yml
+        for n in name.split('/'):
+            el = el[n]
+
+        return el
+
+    def err(k):
+        print(f"Specifications requires the {k.args[0]} key to be set.")
+
+    return _load_impl(get, err)
+
+
+def _load_impl(get, err):
     try:
         return Specifications(
+            rest_joint_states=tuple(get("rest_joint_states")),
+            rcm=(get("rcm/x") / 1e3, get("rcm/y") / 1e3, get("rcm/z") / 1e3),
             R=get("rcm/r") / 1e3,
             t=get("rcm/t") / 1e3,
             r=get("tool/r") / 1e3,
@@ -54,5 +82,5 @@ def create_specification(root="/spec"):
             l2=get("tool/l2") / 1e3,
         )
     except KeyError as k:
-        rospy.logfatal(f"Specifications requires the {k.args[0]} param to be set.")
+        err(k)
         return

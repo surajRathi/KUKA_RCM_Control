@@ -9,7 +9,7 @@ from tf.transformations import quaternion_about_axis, quaternion_multiply
 from visualization_msgs.msg import Marker, MarkerArray
 
 from orchestrator import Orchestrator, MoveitFailure
-from specifications import create_specification
+from specifications import from_param
 
 
 class InteriorMover:
@@ -26,7 +26,7 @@ class InteriorMover:
         self.target_point = self.orc.move_group.get_current_pose().pose.position
 
         # Note: All measurements in mm
-        self.spec = create_specification('/spec')
+        self.spec = from_param('/spec')
         self.viz_pub = rospy.Publisher('/viz/volumes', MarkerArray, queue_size=1, latch=True)
         self.viz_range_pub = rospy.Publisher('/viz/range', Range, queue_size=1, latch=True)
         self.viz_tf = tf2_ros.StaticTransformBroadcaster()
@@ -144,7 +144,7 @@ def main():
     mover = InteriorMover()
 
     with mover as pt:
-        pt.x += 0.005
+        pt.z = 0.19258723932061386
 
 
     # with mover as pt:
