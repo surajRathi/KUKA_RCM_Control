@@ -128,6 +128,8 @@ class InteriorMover:
         new /= np.linalg.norm(new)
 
         n_c = np.cross(orig, new)
+        if np.isclose(n_c, 0).all():
+            n_c = np.array([1.0, 0.0, 0.0])
         n_c /= np.linalg.norm(n_c)
 
         theta = np.arccos(np.dot(orig, new))
