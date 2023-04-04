@@ -5,6 +5,7 @@ from typing import Tuple
 
 @dataclass
 class Specifications:
+    id: str
     rcm: Tuple[float, float, float]
     rest_joint_states: Tuple[float, ...]
     R: float
@@ -72,6 +73,7 @@ def from_yaml(filename="./world.yaml"):
 def _load_impl(get, err):
     try:
         return Specifications(
+            id=str(get("id")),
             rest_joint_states=tuple(get("rest_joint_states")),
             rcm=(get("rcm/x") / 1e3, get("rcm/y") / 1e3, get("rcm/z") / 1e3),
             R=get("rcm/r") / 1e3,

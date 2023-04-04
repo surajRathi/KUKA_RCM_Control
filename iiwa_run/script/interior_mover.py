@@ -14,8 +14,10 @@ from specifications import from_param
 
 class InteriorMover:
     def __init__(self, o: Orchestrator = None):
+        self.spec = from_param('/spec')
+
         self.orc = Orchestrator() if o is None else o
-        self.orc.set_robot_state(self.orc.inserted_joint_state)
+        self.orc.set_robot_state(self.orc.create_joint_state(self.spec.rest_joint_states))
 
         insertion_pose = PoseStamped()
         insertion_pose.header.frame_id = "Insertion_Pose"
@@ -26,7 +28,6 @@ class InteriorMover:
         self.target_point = self.orc.move_group.get_current_pose().pose.position
 
         # Note: All measurements in mm
-        self.spec = from_param('/spec')
         self.viz_pub = rospy.Publisher('/viz/volumes', MarkerArray, queue_size=1, latch=True)
         self.viz_range_pub = rospy.Publisher('/viz/range', Range, queue_size=1, latch=True)
         self.viz_tf = tf2_ros.StaticTransformBroadcaster()
@@ -130,7 +131,6 @@ class InteriorMover:
         n_c = np.cross(orig, new)
         if np.isclose(n_c, 0).all():
             n_c = np.array([1.0, 0.0, 0.0])
-        n_c /= np.linalg.norm(n_c)
 
         theta = np.arccos(np.dot(orig, new))
         q_rot = quaternion_about_axis(axis=n_c, angle=theta)
@@ -145,26 +145,15 @@ class InteriorMover:
 def main():
     mover = InteriorMover()
 
-    with mover as pt:
-        pt.z = 0.19258723932061386
-
-
+    # # To get the new initial joint position of different Spec params.
     # with mover as pt:
-    #     pt.x += mover.spec.rl1 / 2
+    #     pt.x, pt.y, pt.z = mover.spec.rcm
+    #     pt.z -= (mover.spec.H1 + mover.spec.H)
+
+    with mover as pt:
+        pt.x += 20e-3
 
     rospy.spin()
-
-    # with mover as pt:
-    #     pt.x += 0.025
-    #
-    # with mover as pt:
-    #     pt.y += 0.025
-    #
-    # with mover as pt:
-    #     pt.x -= 0.05
-    #
-    # with mover as pt:
-    #     pt.y -= 0.05
 
 
 if __name__ == '__main__':

@@ -444,23 +444,20 @@
         <child link="tool_link" />
         <origin rpy="0 0 0" xyz="0.00 0.00 0.00" />
     </joint>
-    <!-- Here we define the geometry of the tool. We designed the tool ourselves, so we have a mesh file that represents it.
-    Else, one can define it using a geometric representation that approximate it, like a cylinder (see commented lines) -->
     <link name="tool_link">
         <visual>
             <material name="Grey" />
-            <origin rpy="0 -1.5707963267948966 0" xyz="0 0 -0.005" />
+            <origin rpy="0 -1.5707963267948966 0" xyz="0 0 0.0" />
             <geometry>
                 <mesh filename="package://iiwa_needle_description/meshes/visual/needle.obj" scale="0.001 0.001 0.001" />
-                <cylinder length="0.25" radius="0.008" />
             </geometry>
             <material name="StainlessSteel" />
         </visual>
         <collision>
-            <origin rpy="0 0 0" xyz="0 0 0.035" />
+            <origin rpy="0 0 0" xyz="0 0 0.175" />
             <geometry>
                 <!--<mesh filename="package://iiwa_needle_description/meshes/collision/needle.obj" scale="0.001 0.001 0.001"/>-->
-                <cylinder length="0.070" radius="0.004" />
+                <cylinder length="0.35" radius="0.004" />
             </geometry>
         </collision>
         <inertial>
@@ -473,15 +470,21 @@
     <joint name="tool_tip_joint" type="fixed">
         <parent link="tool_link" />
         <child link="tool_link_ee" />
-        <origin rpy="0 0 0" xyz="0.00 0.00 0.075" />
+        <origin rpy="0 0 0" xyz="0.00 0.00 0.35" />
     </joint>
     <!--  The TCP frame is here defined -->
     <link name="tool_link_ee" />
+    <link name="abdomen_base" />
+    <joint name="abdomen_base_joint" type="fixed">
+        <parent link="world" />
+        <child link="abdomen_base" />
+        <origin rpy="0 0 0" xyz="0 -0.5 0.0" />
+    </joint>
     <link name="RCM" />
     <joint name="RCM_JOINT" type="fixed">
-        <parent link="world" />
+        <parent link="abdomen_base" />
         <child link="RCM" />
-        <origin rpy="0 0 0" xyz="0 -0.5 0.3" />
+        <origin rpy="0 0 0" xyz="0 0.0 0.3" />
     </joint>
     <link name="Insertion_Pose" />
     <joint name="INSERTION_JOINT" type="fixed">

@@ -6,6 +6,7 @@ from typing import Tuple
 
 import kdl_parser_py.urdf as kdl_parser
 import numpy as np
+import rospkg
 import tqdm
 from PyKDL import ChainFkSolverPos_recursive, JntArray, Frame, ChainIkSolverPos_NR, ChainIkSolverVel_pinv, Vector, \
     Rotation
@@ -82,9 +83,11 @@ class Indexer:
 
 class IKOrchestrator:
     def __init__(self, resolution=2e-3):
-        base_dir = Path(sys.argv[0]).parent.parent
+        robot_desc = Path(rospkg.RosPack().get_path('iiwa_needle_moveit')) / 'config/gazebo_iiwa7_tool.urdf'
+        spec_desc = Path(rospkg.RosPack().get_path('iiwa_needle_description')) / 'param/world.yaml'
+        run_dir = Path(sys.argv[0]).parent.parent / "run"
 
-        self.spec = from_yaml(base_dir / "data" / "world.yaml")
+        self.spec = from_yaml(spec_desc)
         self.initial_joint_states = self.spec.rest_joint_states
         self.nj = len(self.initial_joint_states)
 
@@ -93,7 +96,7 @@ class IKOrchestrator:
 
         # Set up KDL
         with NoPrint(stdout=True, stderr=True):
-            success, tree = kdl_parser.treeFromFile(base_dir / "data" / "robot.urdf")
+            success, tree = kdl_parser.treeFromFile(robot_desc)
         if not success:
             print("Could not load the kdl_tree from the urdf.")
             raise RuntimeError()
@@ -114,8 +117,8 @@ class IKOrchestrator:
         self.insertion_rot = Rotation().Quaternion(x=0.000, y=1.000, z=0.000, w=0.000)
 
         array_shape = tuple(list(self.indexer.shape) + [3 + self.nj])
-        frontier_array_file = base_dir / "run" / "front.csv"
-        data_array_file = base_dir / "run" / "out.npy"
+        # frontier_array_file = run_dir / "front.csv"
+        data_array_file = run_dir / f"{self.spec.id}.npy"
 
         if not Path(data_array_file).exists():
             # arr = np.zeros(array_shape, dtype=np.float32) + np.nan

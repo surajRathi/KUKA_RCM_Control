@@ -73,6 +73,12 @@ class Orchestrator:
 
         self.goal_pose = rospy.Publisher('/viz/goal_pose', PoseStamped, queue_size=1)
 
+    def create_joint_state(self, joint_vals):
+        active_joints = self.robot.get_active_joint_names(group=self.group_name)
+        return JointState(header=Header(stamp=rospy.Time.now()),
+                          name=active_joints,
+                          position=joint_vals)
+
     def add_abdomen(self, as_collision_object=False):
         abdomen_pose = geometry_msgs.msg.PoseStamped()
         abdomen_pose.header.frame_id = "abdomen_base"
