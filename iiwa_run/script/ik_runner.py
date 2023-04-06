@@ -280,21 +280,48 @@ class IKOrchestrator:
 
                 yield np.array((r * np.cos(theta), r * np.sin(theta), 0))
 
+        N = np.linalg.norm
+
+        def dist_impl(O, Q, P):
+            return (self.spec.R - N(Q - O)) * N(np.cross(P - Q, O - Q)) / N(P - Q) / N(O - Q)
+
         def is_valid(loc: np.ndarray) -> bool:
-            return True
+            O = np.array((self.insertion_pt.x(), self.insertion_pt.y(), self.insertion_pt.z()))
+            Q = O + loc
+            P = np.array(target_coords)
+
+            Op = O - (0, 0, self.spec.t)
+            k = (P - Q)
+            Qp = Q - k * self.spec.t / k[2]
+
+            # tqdm.tqdm.write(f"{O}{Q}{P}")
+            # tqdm.tqdm.write(f"{Op}{Qp}{P}")
+            # tqdm.tqdm.write(f"{N(Q - O) * 1000}")
+            # tqdm.tqdm.write(f"{N(Qp - Op) * 1000}")
+            # tqdm.tqdm.write(f"{dist_impl(O, Q, P) * 1000}")
+            # tqdm.tqdm.write(f"{dist_impl(Op, Qp, P) * 1000}")
+            # tqdm.tqdm.write(f"{self.spec.r * 1000}")
+            # tqdm.tqdm.write(f"{self.spec.R * 1000}")
+            # raise RuntimeError()
+
+            return dist_impl(O, Q, P) > self.spec.r and dist_impl(Op, Qp, P) > self.spec.r
 
         # Method 1: Brute force
+
         i = 0
+        fail = 0
         for loc in get_locs():
             if is_valid(loc):
+                i += 1
                 f = Frame()
                 f.p = Vector(*target_coords)
                 f.M = self.get_target_orientation(f.p, start_point=loc)
                 yield f
-
-            i += 1
+            else:
+                fail += 1
 
             if i >= self.num_inner:
+                tqdm.tqdm.write(f"Reject perc: {fail / (i + fail):.2f}")
                 return
 
 
