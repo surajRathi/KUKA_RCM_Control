@@ -294,22 +294,11 @@ class IKOrchestrator:
             k = (P - Q)
             Qp = Q - k * self.spec.t / k[2]
 
-            # tqdm.tqdm.write(f"{O}{Q}{P}")
-            # tqdm.tqdm.write(f"{Op}{Qp}{P}")
-            # tqdm.tqdm.write(f"{N(Q - O) * 1000}")
-            # tqdm.tqdm.write(f"{N(Qp - Op) * 1000}")
-            # tqdm.tqdm.write(f"{dist_impl(O, Q, P) * 1000}")
-            # tqdm.tqdm.write(f"{dist_impl(Op, Qp, P) * 1000}")
-            # tqdm.tqdm.write(f"{self.spec.r * 1000}")
-            # tqdm.tqdm.write(f"{self.spec.R * 1000}")
-            # raise RuntimeError()
-
             return dist_impl(O, Q, P) > self.spec.r and dist_impl(Op, Qp, P) > self.spec.r
 
         # Method 1: Brute force
 
         i = 0
-        fail = 0
         for loc in get_locs():
             if is_valid(loc):
                 i += 1
@@ -317,11 +306,8 @@ class IKOrchestrator:
                 f.p = Vector(*target_coords)
                 f.M = self.get_target_orientation(f.p, start_point=loc)
                 yield f
-            else:
-                fail += 1
 
             if i >= self.num_inner:
-                tqdm.tqdm.write(f"Reject perc: {fail / (i + fail):.2f}")
                 return
 
 
