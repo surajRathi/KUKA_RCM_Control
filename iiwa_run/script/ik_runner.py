@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 from queue import Queue
-from typing import Tuple
+from typing import Tuple, Optional
 
 import kdl_parser_py.urdf as kdl_parser
 import numpy as np
@@ -10,6 +10,7 @@ import rospkg
 import tqdm
 from PyKDL import ChainFkSolverPos_recursive, JntArray, Frame, ChainIkSolverPos_NR, ChainIkSolverVel_pinv, Vector, \
     Rotation
+from numpy.random import Generator
 from tf.transformations import quaternion_about_axis, quaternion_multiply
 
 from no_print import NoPrint
@@ -94,6 +95,9 @@ class IKOrchestrator:
         self.res = resolution
         self.indexer = Indexer(self.spec, self.res)
 
+        self.rng: Generator = np.random.default_rng(seed=self.spec.seed)
+        self.num_inner = self.spec.n_inner
+
         # Set up KDL
         with NoPrint(stdout=True, stderr=True):
             success, tree = kdl_parser.treeFromFile(robot_desc)
@@ -145,7 +149,7 @@ class IKOrchestrator:
         self.add_next(self.indexer.coord_to_index(self.indexer.x0, self.indexer.y0, self.indexer.z0))
 
     def run(self):
-        with tqdm.tqdm(total=self.N) as bar:
+        with tqdm.tqdm(total=self.N, leave=True) as bar:
             bar.update(self.done)
             while not self.frontier.empty():
                 ind, ind_p = self.frontier.get()
@@ -157,13 +161,11 @@ class IKOrchestrator:
                 for i, val in enumerate(pj):
                     j_start[i] = val
 
-                f = Frame()
-                f.p = Vector(*self.indexer.index_to_coord(*ind))
-                f.M = self.get_target_orientation(f.p)
-
-                # ik
-                joint_diff, pos_error, orien_error, joints = self.do_ik(j_start, f)
-
+                joint_diff, pos_error, orien_error, joints = min(
+                    (self.do_ik(j_start, frame)
+                     for frame in tqdm.tqdm(self.generate_frames(ind), total=self.num_inner, leave=False)),
+                    key=lambda k: k[0]
+                )
                 # save data
                 self.arr[ind] = [joint_diff, pos_error, orien_error] + [joints[i] for i in range(self.nj)]
 
@@ -175,10 +177,11 @@ class IKOrchestrator:
                 bar.update(1)
                 bar.set_description(f"F: {self.frontier.qsize()}")
 
-    def get_target_orientation(self, target_point: Vector) -> Rotation:
-        dx = target_point.x() - self.insertion_pt.x()
-        dy = target_point.y() - self.insertion_pt.y()
-        dz = target_point.z() - self.insertion_pt.z()
+    def get_target_orientation(self, target_point: Vector,
+                               start_point: Optional[np.ndarray] = np.array([0, 0, 0])) -> Rotation:
+        dx = target_point.x() - self.insertion_pt.x() - start_point[0]
+        dy = target_point.y() - self.insertion_pt.y() - start_point[1]
+        dz = target_point.z() - self.insertion_pt.z() - start_point[2]
 
         if abs(dz) < 1e-9:
             if abs(dx) < 1e-9 and abs(dy) < 1e-9:
@@ -262,6 +265,37 @@ class IKOrchestrator:
                         self.frontier.put((ind_t, ind))
                         self.arr[ind_t][0] = -1
                 index[ax] -= val
+
+    def generate_frames(self, ind):
+        rng: Generator = np.random.default_rng(self.rng.integers(0, 2 ** 31 - 1, endpoint=True, dtype=np.int32))
+        center_r = self.spec.R - self.spec.r
+
+        target_coords = self.indexer.index_to_coord(*ind)
+
+        def get_locs():
+            while True:
+                r, theta = rng.random(2)
+                r *= center_r
+                theta *= 2 * np.pi
+
+                yield np.array((r * np.cos(theta), r * np.sin(theta), 0))
+
+        def is_valid(loc: np.ndarray) -> bool:
+            return True
+
+        # Method 1: Brute force
+        i = 0
+        for loc in get_locs():
+            if is_valid(loc):
+                f = Frame()
+                f.p = Vector(*target_coords)
+                f.M = self.get_target_orientation(f.p, start_point=loc)
+                yield f
+
+            i += 1
+
+            if i >= self.num_inner:
+                return
 
 
 def main():
