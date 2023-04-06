@@ -149,7 +149,6 @@ class IKOrchestrator:
         self.add_next(self.indexer.coord_to_index(self.indexer.x0, self.indexer.y0, self.indexer.z0))
 
     def run(self):
-        sample = False
         with tqdm.tqdm(total=self.N, leave=True) as bar:
             bar.update(self.done)
             while not self.frontier.empty():
@@ -162,17 +161,12 @@ class IKOrchestrator:
                 for i, val in enumerate(pj):
                     j_start[i] = val
 
-                if sample:
                     joint_diff, pos_error, orien_error, joints = min(
                         (self.do_ik(j_start, frame)
-                         for frame in tqdm.tqdm(self.generate_frames(ind), total=self.num_inner, leave=False)),
+                         for frame in self.generate_frames(ind)),
+                        # for frame in tqdm.tqdm(self.generate_frames(ind), total=self.num_inner, leave=False)),
                         key=lambda k: k[0]
                     )
-                else:
-                    f = Frame()
-                    f.p = Vector(*self.indexer.index_to_coord(*ind))
-                    f.M = self.get_target_orientation(f.p)
-                    joint_diff, pos_error, orien_error, joints = self.do_ik(j_start, f)
                 # save data
                 self.arr[ind] = [joint_diff, pos_error, orien_error] + [joints[i] for i in range(self.nj)]
 
@@ -280,6 +274,7 @@ class IKOrchestrator:
         target_coords = self.indexer.index_to_coord(*ind)
 
         def get_locs():
+            yield np.array((0, 0, 0))
             while True:
                 r, theta = rng.random(2)
                 r *= center_r
@@ -300,6 +295,9 @@ class IKOrchestrator:
             Op = O - (0, 0, self.spec.t)
             k = (P - Q)
             Qp = Q - k * self.spec.t / k[2]
+
+            if N(Q - O) <= 1e-9:
+                return True
 
             return dist_impl(O, Q, P) > self.spec.r and dist_impl(Op, Qp, P) > self.spec.r
 
