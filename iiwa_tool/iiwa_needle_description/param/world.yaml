@@ -1,5 +1,6 @@
-id: 'check_space'
-n_inner: 0
+id: 'expanded_1'
+n_inner: 100
+max_n_inner: 1000
 seed: 32
 
 # Radians

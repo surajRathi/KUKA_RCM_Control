@@ -7,6 +7,7 @@ from typing import Tuple
 class Specifications:
     id: str
     n_inner: int
+    max_n_inner: int
     seed: int
 
     rcm: Tuple[float, float, float]
@@ -69,6 +70,7 @@ def _load_impl(get, err):
         return Specifications(
             id=str(get("id")),
             n_inner=int(get("n_inner")),
+            max_n_inner=int(get("n_inner")),
             seed=int(get("seed")),
             rest_joint_states=tuple(get("rest_joint_states")),
             rcm=(get("rcm/x") / 1e3, get("rcm/y") / 1e3, get("rcm/z") / 1e3),

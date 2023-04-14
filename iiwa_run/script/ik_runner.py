@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import random
 import sys
-from math import sqrt, acos, sin, cos, floor
+from math import sqrt, acos, sin, cos, floor, isinf
 from pathlib import Path
 from queue import Queue
 from typing import Tuple
@@ -99,6 +99,8 @@ class IKOrchestrator:
         random.seed(self.spec.seed)
         self.rng_state = random.getstate()
         self.num_inner = self.spec.n_inner
+        self.max_n_inner = self.spec.max_n_inner
+        self.num_sample_out = 0
 
         # Set up KDL
         with NoPrint(stdout=True, stderr=True):
@@ -170,18 +172,12 @@ class IKOrchestrator:
                         key=lambda k: k[0]
                     )
                 # save data
-                if (joints.rows()) != self.nj:
-                    print(joints, (joints.rows()))
-                    raise RuntimeError()
-                self.arr[ind] = [joint_diff, pos_error, orien_error] + [joints[i] for i in range(self.nj)]
-
-                # print(f"Initial:\t{orc.indexer.x0:.2f}\t{orc.indexer.y0:.2f}\t{orc.indexer.z0:.2f}")
-                # print(f"Final  :\t{f.p.x():.2f}\t{f.p.y():.2f}\t{f.p.z():.2f}")
-                # print(f"{joint_diff=:.2E}\t{pos_error=:.2E}\t{orien_error=:.2E}")
-
-                self.add_next(ind)
-                bar.update(1)
-                # bar.set_description(f"F: {self.frontier.qsize()}")
+                if not isinf(joint_diff):
+                    self.arr[ind] = [joint_diff, pos_error, orien_error] + [joints[i] for i in range(self.nj)]
+                    self.add_next(ind)
+                    bar.update(1)
+                else:
+                    self.arr[ind] = [joint_diff, pos_error, orien_error] + [np.inf for i in range(self.nj)]
 
     def get_target_orientation(self, target_point: Vector,
                                start_point: Tuple[float, float, float] = (0, 0, 0)) -> Rotation:
@@ -253,7 +249,8 @@ class IKOrchestrator:
         if dot_prod > 1:
             dot_prod = 1.0
         orientation_error = acos(dot_prod)
-
+        if (j_ik.rows()) != self.nj:
+            print("AAAAA", self.nj, j_ik, (j_ik.rows()), j_in, (j_in.rows()), f_c)
         return joint_diff, position_error, orientation_error, j_ik
 
     def add_next(self, ind: Tuple[int, int, int]):
@@ -309,7 +306,9 @@ class IKOrchestrator:
         # Method 1: Brute force
 
         i = 0
+        j = 0
         for lx, ly, lz in get_locs():
+            j += 1
             if is_valid(lx, ly, lz):
                 i += 1
                 f = Frame()
@@ -320,10 +319,17 @@ class IKOrchestrator:
             if i >= self.num_inner:
                 return
 
+            if j >= self.max_n_inner:
+                self.num_sample_out += 1
+                return
+
 
 def main():
     orc = IKOrchestrator()
     orc.run()
+    print("Times solve failed:", np.isnan(orc.arr[:, :, :, 0]).sum())
+    print("Times could not sample:", orc.num_sample_out)
+    print("Total N:", orc.N)
 
 
 if __name__ == '__main__':
