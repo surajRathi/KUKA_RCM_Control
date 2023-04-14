@@ -56,7 +56,7 @@
             <origin xyz="0 0 ${needle_len / 2}" rpy="0 0 0"/>
             <geometry>
                 <!--<mesh filename="package://iiwa_needle_description/meshes/collision/needle.obj" scale="0.001 0.001 0.001"/>-->
-                <cylinder length="${needle_len}" radius="0.004"/>
+                <cylinder length="${needle_len}" radius="0.002"/>
             </geometry>
         </collision>
     </link>
