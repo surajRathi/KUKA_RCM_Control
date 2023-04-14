@@ -98,6 +98,7 @@ class Orchestrator:
         if as_collision_object:
             self.scene.add_mesh("abdomen", abdomen_pose_transformed, str(p), size=(0.001, 0.001, 0.001))
         else:
+            return
             msg = Marker()
             msg.mesh_resource = "package://iiwa_needle_description/meshes/rviz/abdomen.stl"
             msg.mesh_use_embedded_materials = False  # Need this to use textures for mesh
