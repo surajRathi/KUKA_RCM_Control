@@ -87,7 +87,6 @@ class IKOrchestrator:
     def __init__(self, resolution=2e-3):
         robot_desc = Path(rospkg.RosPack().get_path('iiwa_needle_moveit')) / 'config/gazebo_iiwa7_tool.urdf'
         spec_desc = Path(rospkg.RosPack().get_path('iiwa_needle_description')) / 'param/world.yaml'
-        run_dir = Path(sys.argv[0]).parent.parent / "run"
 
         self.spec = from_yaml(spec_desc)
         self.initial_joint_states = self.spec.rest_joint_states
@@ -124,6 +123,7 @@ class IKOrchestrator:
         # TODO: Dont Hardcode! However the rest of the code relies on this orientation being valid.
         self.insertion_rot = Rotation().Quaternion(x=0.000, y=1.000, z=0.000, w=0.000)
 
+        run_dir = Path(sys.argv[0]).parent.parent / "run"
         array_shape = tuple(list(self.indexer.shape) + [3 + self.nj])
         # frontier_array_file = run_dir / "front.csv"
         data_array_file = run_dir / f"{self.spec.id}.npy"
@@ -151,33 +151,6 @@ class IKOrchestrator:
 
         self.frontier = Queue()
         self.add_next(self.indexer.coord_to_index(self.indexer.x0, self.indexer.y0, self.indexer.z0))
-
-    def run(self):
-        with tqdm.tqdm(total=self.N, leave=True) as bar:
-            bar.update(self.done)
-            while not self.frontier.empty():
-                ind, ind_p = self.frontier.get()
-
-                # get parent joints
-                pj = self.arr[ind_p][3:]
-
-                j_start = JntArray(self.nj)
-                for i, val in enumerate(pj):
-                    j_start[i] = val
-
-                    joint_diff, pos_error, orien_error, joints = min(
-                        (self.do_ik(j_start, frame)
-                         for frame in self.generate_frames(ind)),
-                        # for frame in tqdm.tqdm(self.generate_frames(ind), total=self.num_inner, leave=False)),
-                        key=lambda k: k[0]
-                    )
-                # save data
-                if not isinf(joint_diff):
-                    self.arr[ind] = [joint_diff, pos_error, orien_error] + [joints[i] for i in range(self.nj)]
-                    self.add_next(ind)
-                    bar.update(1)
-                else:
-                    self.arr[ind] = [joint_diff, pos_error, orien_error] + [np.inf for i in range(self.nj)]
 
     def get_target_orientation(self, target_point: Vector,
                                start_point: Tuple[float, float, float] = (0, 0, 0)) -> Rotation:
@@ -253,18 +226,6 @@ class IKOrchestrator:
             print("AAAAA", self.nj, j_ik, (j_ik.rows()), j_in, (j_in.rows()), f_c)
         return joint_diff, position_error, orientation_error, j_ik
 
-    def add_next(self, ind: Tuple[int, int, int]):
-        index = list(ind)
-        for ax in (0, 1, 2):
-            for val in (-1, 1):
-                index[ax] += val
-                if self.indexer.is_index_valid(*index):
-                    ind_t = tuple(index)
-                    if np.isnan(self.arr[ind_t][0]):
-                        self.frontier.put((ind_t, ind))
-                        self.arr[ind_t][0] = -1
-                index[ax] -= val
-
     def generate_frames(self, ind):
         random.setstate(self.rng_state)
         this_seed = random.getrandbits(32)
@@ -322,6 +283,45 @@ class IKOrchestrator:
             if j >= self.max_n_inner:
                 self.num_sample_out += 1
                 return
+
+    def run(self):
+        with tqdm.tqdm(total=self.N, leave=True) as bar:
+            bar.update(self.done)
+            while not self.frontier.empty():
+                ind, ind_p = self.frontier.get()
+
+                # get parent joints
+                pj = self.arr[ind_p][3:]
+
+                j_start = JntArray(self.nj)
+                for i, val in enumerate(pj):
+                    j_start[i] = val
+
+                    joint_diff, pos_error, orien_error, joints = min(
+                        (self.do_ik(j_start, frame)
+                         for frame in self.generate_frames(ind)),
+                        # for frame in tqdm.tqdm(self.generate_frames(ind), total=self.num_inner, leave=False)),
+                        key=lambda k: k[0]
+                    )
+                # save data
+                if not isinf(joint_diff):
+                    self.arr[ind] = [joint_diff, pos_error, orien_error] + [joints[i] for i in range(self.nj)]
+                    self.add_next(ind)
+                    bar.update(1)
+                else:
+                    self.arr[ind] = [joint_diff, pos_error, orien_error] + [np.inf for i in range(self.nj)]
+
+    def add_next(self, ind: Tuple[int, int, int]):
+        index = list(ind)
+        for ax in (0, 1, 2):
+            for val in (-1, 1):
+                index[ax] += val
+                if self.indexer.is_index_valid(*index):
+                    ind_t = tuple(index)
+                    if np.isnan(self.arr[ind_t][0]):
+                        self.frontier.put((ind_t, ind))
+                        self.arr[ind_t][0] = -1
+                index[ax] -= val
 
 
 def main():
