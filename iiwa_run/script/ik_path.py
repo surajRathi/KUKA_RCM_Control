@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+import time
 from math import isfinite
 
 import numpy as np
@@ -21,6 +22,7 @@ class PathCheck(SamplingIKOrchestrator):
         return np.linspace(x1, x2, num_pts)
 
     def run(self, path):
+        t_start = time.time()
         assert all(path[0, :] == (0, 0, 0))
         tjd_s = np.zeros(path.shape[0]) * np.nan
         joints = np.zeros((path.shape[0], self.nj)) * np.nan
@@ -43,15 +45,17 @@ class PathCheck(SamplingIKOrchestrator):
 
             cur_joints = next_joints
         else:
-            print("Path Successfully found")
-            print(tjd_s)
+            t_end = time.time()
+            print(f"Path Successfully found in {(t_end - t_start) * 1000:.0f}ms.")
+            print(f"n_inner: {self.num_inner}")
+            print(f"Mean TJDs: {tjd_s.mean():.4f}")
 
         np.save('joint_vals.npy', joints)
 
 
 def main():
     pc = PathCheck()
-    path = pc.get_line_path((0, 0, 0), (0.1, -0.1, 0))
+    path = pc.get_line_path((0, 0, 0), (0.3, 0.0, 0.0))
     pc.run(path)
 
 
