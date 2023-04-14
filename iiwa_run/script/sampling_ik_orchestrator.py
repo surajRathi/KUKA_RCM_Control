@@ -181,3 +181,11 @@ class SamplingIKOrchestrator:
             if j >= self.max_n_inner:
                 self.num_sample_out += 1
                 return
+
+    def get_solution(self, j_start, pt):
+        joint_diff, pos_error, orien_error, joints = min(
+            (self.do_ik(j_start, frame)
+             for frame in self.generate_frames(*pt)),
+            key=lambda k: k[0]
+        )
+        return joint_diff, pos_error, orien_error, joints

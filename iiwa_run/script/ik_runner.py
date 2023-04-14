@@ -126,12 +126,8 @@ class FloodFillCheck(SamplingIKOrchestrator):
                 for i, val in enumerate(pj):
                     j_start[i] = val
 
-                    joint_diff, pos_error, orien_error, joints = min(
-                        (self.do_ik(j_start, frame)
-                         for frame in self.generate_frames(*self.indexer.index_to_coord(*ind))),
-                        # for frame in tqdm.tqdm(self.generate_frames(ind), total=self.num_inner, leave=False)),
-                        key=lambda k: k[0]
-                    )
+                    joint_diff, pos_error, orien_error, joints = self.get_solution(j_start,
+                                                                                   self.indexer.index_to_coord(*ind))
                 # save data
                 if not isinf(joint_diff):
                     self.arr[ind] = [joint_diff, pos_error, orien_error] + [joints[i] for i in range(self.nj)]
