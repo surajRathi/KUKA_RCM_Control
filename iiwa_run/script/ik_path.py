@@ -4,6 +4,7 @@ from math import isfinite
 
 import numpy as np
 from PyKDL import JntArray
+from tqdm import tqdm
 
 from sampling_ik_orchestrator import SamplingIKOrchestrator
 
@@ -34,7 +35,7 @@ class PathCheck(SamplingIKOrchestrator):
         cur_joints = JntArray(self.nj)
         for i, val in enumerate(self.initial_joint_states):
             cur_joints[i] = val
-        for i, pt in enumerate(path[1:], start=1):
+        for i, pt in enumerate(tqdm(path[1:], total=path.shape[0] - 1), start=1):
             joint_diff, pos_error, orien_error, next_joints = self.get_solution(cur_joints, pt)
             if not isfinite(joint_diff):
                 print(f"Could not find solution at {i=} of {path.shape[0]}")
