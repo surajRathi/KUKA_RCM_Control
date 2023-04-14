@@ -35,7 +35,7 @@ class Indexer:
     """ Maps the real world xyz coordinates to the indexes for the backing array. """
 
     def __init__(self, spec: Specifications, res: float):
-        s = spec.rl1 / np.sqrt(2)
+        s = spec.rl / np.sqrt(2)
         self.res = res
 
         self.x0, self.y0, self.z0 = spec.rcm
@@ -292,14 +292,10 @@ class IKOrchestrator:
             Q = O + loc
             P = np.array(target_coords)
 
-            Op = O - (0, 0, self.spec.t)
-            k = (P - Q)
-            Qp = Q - k * self.spec.t / k[2]
-
             if N(Q - O) <= 1e-9:
                 return True
 
-            return dist_impl(O, Q, P) > self.spec.r and dist_impl(Op, Qp, P) > self.spec.r
+            return dist_impl(O, Q, P) > self.spec.r
 
         # Method 1: Brute force
 

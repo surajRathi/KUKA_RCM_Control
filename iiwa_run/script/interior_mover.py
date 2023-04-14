@@ -39,7 +39,6 @@ class InteriorMover:
         trans.header.stamp = rospy.Time.now()
         trans.header.frame_id = "Insertion_Pose"
         trans.child_frame_id = "Workspace_Range"
-        trans.transform.translation.z = -self.spec.lb
         trans.transform.rotation.y = -1 / np.sqrt(2)
         trans.transform.rotation.w = 1 / np.sqrt(2)
         self.viz_tf.sendTransform(trans)
@@ -51,7 +50,7 @@ class InteriorMover:
         r.max_range = 2
         r.radiation_type = r.ULTRASOUND  # ???
         # r.range = self.spec.l2
-        r.range = self.spec.H1 + self.spec.H
+        r.range = self.spec.H2
         r.field_of_view = 2 * self.spec.theta
         self.viz_range_pub.publish(r)
 
@@ -68,9 +67,9 @@ class InteriorMover:
         m.id = 0
         m.type = Marker.CYLINDER
         m.action = Marker.ADD
-        m.pose.position = Point(x=0, y=0, z=spec.t / 2)
+        m.pose.position = Point(x=0, y=0, z=0)
         m.pose.orientation = Quaternion(w=1)
-        m.scale = Vector3(x=2 * spec.R, y=2 * spec.R, z=spec.t)
+        m.scale = Vector3(x=2 * spec.R, y=2 * spec.R, z=0)
         m.color = ColorRGBA(r=1, g=0, b=0, a=0.5)
 
         marker_array.markers.append(m)
@@ -85,7 +84,7 @@ class InteriorMover:
         m.action = Marker.ADD
         m.pose.position = Point(x=0, y=0, z=spec.H1 + spec.H / 2)
         m.pose.orientation = Quaternion(w=1)
-        m.scale = Vector3(x=2 * spec.rl1, y=2 * spec.rl1, z=spec.H)
+        m.scale = Vector3(x=2 * spec.rl, y=2 * spec.rl, z=spec.H)
         m.color = ColorRGBA(r=0, g=1, b=0, a=0.3)
         marker_array.markers.append(m)
 
