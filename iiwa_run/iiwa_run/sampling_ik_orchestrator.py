@@ -10,8 +10,8 @@ from PyKDL import ChainFkSolverPos_recursive, ChainIkSolverVel_pinv, ChainIkSolv
 from kdl_parser_py import urdf as kdl_parser
 from tf.transformations import quaternion_about_axis, quaternion_multiply
 
-from no_print import NoPrint
-from specifications import from_yaml
+from iiwa_run.helper.no_print import NoPrint
+from iiwa_run.helper.specifications import from_yaml
 
 
 class SamplingIKOrchestrator:

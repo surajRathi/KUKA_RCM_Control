@@ -6,12 +6,12 @@ import numpy as np
 from PyKDL import JntArray
 from tqdm import tqdm
 
-from sampling_ik_orchestrator import SamplingIKOrchestrator
+from iiwa_run.sampling_ik_orchestrator import SamplingIKOrchestrator
 
 
-class PathCheck(SamplingIKOrchestrator):
+class PathToJoint(SamplingIKOrchestrator):
     def __init__(self, resolution=2e-3):
-        super(PathCheck, self).__init__(resolution)
+        super(PathToJoint, self).__init__(resolution)
 
         self.r0 = np.array(self.spec.rcm)
         self.r0[2] -= (self.spec.H1 + self.spec.H)
@@ -55,7 +55,7 @@ class PathCheck(SamplingIKOrchestrator):
 
 
 def main():
-    pc = PathCheck()
+    pc = PathToJoint()
     path = pc.get_line_path((0, 0, 0), (0.3, 0.0, 0.0))
     pc.run(path)
 

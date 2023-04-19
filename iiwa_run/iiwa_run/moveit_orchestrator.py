@@ -31,7 +31,7 @@ class MoveitFailure(Exception):
     pass
 
 
-class Orchestrator:
+class MoveitOrchestrator:
     def __init__(self):
         moveit_commander.roscpp_initialize(sys.argv)
         rospy.init_node("test1")
@@ -328,7 +328,7 @@ def get_target_orientation(insertion_pose, target_point) -> Quaternion:
 
 
 def main():
-    orc = Orchestrator()
+    orc = MoveitOrchestrator()
     insertion_routine(orc)
 
 

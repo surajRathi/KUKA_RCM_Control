@@ -6,7 +6,7 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import Header, ColorRGBA
 from visualization_msgs.msg import MarkerArray, Marker
 
-from specifications import from_param
+from iiwa_run.helper.specifications import from_param
 
 
 def show_rcm(pub):
@@ -36,7 +36,8 @@ def main():
     joints = np.load(filename)
 
     rospy.init_node("path_player")
-    joint_pub = rospy.Publisher('/move_group/fake_controller_joint_states', JointState, queue_size=5)
+    # joint_pub = rospy.Publisher('/move_group/fake_controller_joint_states', JointState, queue_size=5)
+    joint_pub = rospy.Publisher('/joint_states', JointState, queue_size=5)
     viz_pub = rospy.Publisher('/viz/volumes', MarkerArray, queue_size=1, latch=True)
     show_rcm(viz_pub)
     active_joints = [

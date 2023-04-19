@@ -9,11 +9,11 @@ import numpy as np
 import tqdm
 from PyKDL import JntArray
 
-from sampling_ik_orchestrator import SamplingIKOrchestrator
-from specifications import Specifications
+from iiwa_run.helper.specifications import Specifications
+from iiwa_run.sampling_ik_orchestrator import SamplingIKOrchestrator
 
 
-class Lim:
+class Limits:
     def __init__(self, mi, ma):
         self.min = mi
         self.max = ma
@@ -41,9 +41,9 @@ class Indexer:
         self.yoff = s / 2
         self.zoff = 0
 
-        self.xlim = Lim(self.x0 - s / 2, self.x0 + s / 2)
-        self.ylim = Lim(self.y0 - s / 2, self.y0 + s / 2)
-        self.zlim = Lim(self.z0, self.z0 + spec.H)
+        self.xlim = Limits(self.x0 - s / 2, self.x0 + s / 2)
+        self.ylim = Limits(self.y0 - s / 2, self.y0 + s / 2)
+        self.zlim = Limits(self.z0, self.z0 + spec.H)
 
         self.shape = (
             int(floor(self.xlim.delta / res)),
@@ -51,9 +51,9 @@ class Indexer:
             int(floor(self.zlim.delta / res)),
         )
 
-        self.xilim = Lim(0, self.shape[0] - 1)
-        self.yilim = Lim(0, self.shape[1] - 1)
-        self.zilim = Lim(0, self.shape[2] - 1)
+        self.xilim = Limits(0, self.shape[0] - 1)
+        self.yilim = Limits(0, self.shape[1] - 1)
+        self.zilim = Limits(0, self.shape[2] - 1)
 
     def is_index_valid(self, xi, yi, zi):
         return self.xilim(xi) and self.yilim(yi) and self.zilim(zi)

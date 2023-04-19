@@ -8,15 +8,15 @@ from std_msgs.msg import ColorRGBA
 from tf.transformations import quaternion_about_axis, quaternion_multiply
 from visualization_msgs.msg import Marker, MarkerArray
 
-from orchestrator import Orchestrator, MoveitFailure
-from specifications import from_param
+from iiwa_run.moveit_orchestrator import MoveitOrchestrator, MoveitFailure
+from iiwa_run.helper.specifications import from_param
 
 
-class InteriorMover:
-    def __init__(self, o: Orchestrator = None):
+class DirectIKMover:
+    def __init__(self, o: MoveitOrchestrator = None):
         self.spec = from_param('/spec')
 
-        self.orc = Orchestrator() if o is None else o
+        self.orc = MoveitOrchestrator() if o is None else o
         self.orc.set_robot_state(self.orc.create_joint_state(self.spec.rest_joint_states))
 
         insertion_pose = PoseStamped()
@@ -142,7 +142,7 @@ class InteriorMover:
 
 
 def main():
-    mover = InteriorMover()
+    mover = DirectIKMover()
 
     # # To get the new initial joint position of different Spec params.
     # with mover as pt:

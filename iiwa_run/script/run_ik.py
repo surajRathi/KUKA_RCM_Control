@@ -3,7 +3,7 @@ import kdl_parser_py.urdf as kdl_parser
 import rospy
 from PyKDL import ChainFkSolverPos_recursive, JntArray, Frame, ChainIkSolverPos_NR, ChainIkSolverVel_pinv
 
-from no_print import NoPrint
+from iiwa_run.helper.no_print import NoPrint
 
 # Insertion Position in World: [0.000, -0.500, 0.300]
 rest_joints = [0.7974687140058682, -0.7059608762250215, -2.0557765983620215, -1.7324525588466884, -0.685107459772449,
