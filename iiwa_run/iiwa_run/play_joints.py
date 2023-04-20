@@ -61,6 +61,8 @@ def main():
 
         joint_pub.publish(js)
         rospy.rostime.wallsleep(dt)
+        if rospy.is_shutdown():
+            break
 
     else:
         print("Path Successfully Played")
