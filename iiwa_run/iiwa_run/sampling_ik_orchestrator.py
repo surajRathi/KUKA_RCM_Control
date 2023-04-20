@@ -65,10 +65,10 @@ class SamplingIKOrchestrator:
                 dy = 0
                 dz = 1
             else:
-                print(
-                    f"Invalid interior point: {target_point} compared to insertion point: {self.insertion_pt}")
+                print(f"Invalid interior point: {target_point} compared to insertion point: {self.insertion_pt}")
                 raise RuntimeError()
 
+        # Normal Vector in (target - insertion direction
         nn = sqrt(dx ** 2 + dy ** 2 + dz ** 2)
         nx, ny, nz = (dx / nn, dy / nn, dz / nn)
 
@@ -145,7 +145,7 @@ class SamplingIKOrchestrator:
                 yield r * cos(theta), r * sin(theta), 0
 
         def is_valid(lx: float, ly: float, lz: float) -> bool:
-            n_qo_s = (lx ** 2 + ly ** 2 + lz ** 2)
+            n_qo_s = lx ** 2 + ly ** 2 + lz ** 2
             n_qo = sqrt(n_qo_s)
             if n_qo <= 1e-9:
                 return True
@@ -157,7 +157,11 @@ class SamplingIKOrchestrator:
 
             ux, uy, uz = px - qx, py - qy, pz - qz
 
-            cross_s = (uy * lz - uz * ly) ** 2 + (uz * lx - ux * lz) ** 2 + (ux * ly - uy * lx) ** 2
+            # (p - q) x (q - o)
+            cross_s = \
+                (uy * lz - uz * ly) ** 2 + \
+                (uz * lx - ux * lz) ** 2 + \
+                (ux * ly - uy * lx) ** 2
 
             d = (self.spec.R - n_qo) * sqrt(cross_s / n_pq_s / n_qo_s)
             return d > self.spec.r
