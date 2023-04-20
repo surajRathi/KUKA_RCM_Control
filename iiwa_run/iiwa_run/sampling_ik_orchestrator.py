@@ -74,7 +74,7 @@ class SamplingIKOrchestrator:
 
         nn = sqrt(ny ** 2 + nx ** 2)
 
-        q_rot = quaternion_about_axis(angle=acos(-nz), axis=(-ny / nn, -nx / nn, 0))
+        q_rot = quaternion_about_axis(angle=acos(-nz), axis=(ny / nn, -nx / nn, 0))
 
         q_initial = self.insertion_rot.GetQuaternion()
         q_net = quaternion_multiply(q_rot, q_initial)
