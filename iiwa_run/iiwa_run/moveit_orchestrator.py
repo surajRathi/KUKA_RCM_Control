@@ -20,9 +20,9 @@ from std_msgs.msg import Header, ColorRGBA
 from tf.transformations import quaternion_about_axis, quaternion_multiply
 from visualization_msgs.msg import Marker
 
-INITIAL_HEIGHT = 0.300
-SECOND_HEIGHT = 0.100
-FIRST_DEPTH = 0.05
+INITIAL_HEIGHT = 0.100
+SECOND_HEIGHT = 0.000
+FIRST_DEPTH = 0.15677301355073126
 NEEDLE_LENGTH = 0.300
 FIRST_TRANSLATION = 0.05
 

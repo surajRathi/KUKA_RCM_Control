@@ -75,7 +75,7 @@
     <joint name="abdomen_base_joint" type="fixed">
         <parent link="world"/>
         <child link="abdomen_base"/>
-        <origin xyz="0 -0.5 0.0" rpy="0 0 0"/>
+        <origin xyz="0.5 0.0 0.0" rpy="0 0 0"/>
     </joint>
 
     <link name="RCM"/>

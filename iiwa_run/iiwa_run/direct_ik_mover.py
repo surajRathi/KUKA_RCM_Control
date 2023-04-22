@@ -8,8 +8,8 @@ from std_msgs.msg import ColorRGBA
 from tf.transformations import quaternion_about_axis, quaternion_multiply
 from visualization_msgs.msg import Marker, MarkerArray
 
-from iiwa_run.moveit_orchestrator import MoveitOrchestrator, MoveitFailure
 from iiwa_run.helper.specifications import from_param
+from iiwa_run.moveit_orchestrator import MoveitOrchestrator, MoveitFailure
 
 
 class DirectIKMover:
@@ -151,6 +151,9 @@ def main():
 
     with mover as pt:
         pt.x += 20e-3
+
+    with mover as pt:
+        pt.y += 20e-3
 
     rospy.spin()
 

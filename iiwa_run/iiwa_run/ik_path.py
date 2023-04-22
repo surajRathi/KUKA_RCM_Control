@@ -9,9 +9,9 @@ from tqdm import tqdm
 from iiwa_run.sampling_ik_orchestrator import SamplingIKOrchestrator
 
 
-class PathToJoint(SamplingIKOrchestrator):
+class PathToJoints(SamplingIKOrchestrator):
     def __init__(self, resolution=2e-3):
-        super(PathToJoint, self).__init__(resolution)
+        super(PathToJoints, self).__init__(resolution)
 
         self.r0 = np.array(self.spec.rcm)
         self.r0[2] -= (self.spec.H1 + self.spec.H)
@@ -21,6 +21,19 @@ class PathToJoint(SamplingIKOrchestrator):
         x2 = np.array(x2)
         num_pts = int(np.ceil(np.linalg.norm(x2 - x1) / self.res))
         return np.linspace(x1, x2, num_pts)
+
+    def get_circle_path(self, center, start, angle=2 * np.pi):
+        # all points are in base of the cylinder originated world frame
+        center = np.array(center)
+        start = np.array(start)
+
+        r = np.linalg.norm(start - center)
+        d_theta = self.res / r
+
+        start_angle = np.arctan2(start[2] - center[2], start[1] - center[1])
+        angles = np.arange(start_angle, start_angle + angle, d_theta)
+
+        return center + (r * np.cos(angles), r * np.sin(angles))
 
     def run(self, path):
         t_start = time.time()
@@ -51,13 +64,15 @@ class PathToJoint(SamplingIKOrchestrator):
             print(f"n_inner: {self.num_inner}")
             print(f"Mean TJDs: {tjd_s.mean():.4f}")
 
-        np.save('joint_vals.npy', joints)
+        return joints
 
 
 def main():
-    pc = PathToJoint()
-    path = pc.get_line_path((0, 0, 0), (0.3, 0.0, 0.0))
-    pc.run(path)
+    pc = PathToJoints()
+    # path = pc.get_line_path((0.0, 0, 0), (0.3, 0.0, 0.0))
+    path = np.vstack((pc.get_line_path((0, 0, 0), (0.3, 0.0, 0.0)), pc.get_line_path((0.3, 0, 0), (0.0, 0.3, 0.0))))
+    joints = pc.run(path)
+    np.save('joint_vals.npy', joints)
 
 
 if __name__ == '__main__':
