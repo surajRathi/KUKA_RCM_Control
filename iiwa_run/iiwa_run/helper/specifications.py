@@ -49,7 +49,13 @@ def from_param(root="/spec"):
 
 
 def from_yaml(filename="./world.yaml"):
+
     import yaml
+    # Reader accepts
+    #  - a `bytes` object,
+    #  - a `str` object,
+    #  - a file-like object with its `read` method returning `str`,
+    #  - a file-like object with its `read` method returning `unicode`.
     yml = yaml.safe_load(open(filename, 'r').read())
 
     def get(name):
