@@ -1,86 +1,26 @@
 #!/usr/bin/python3
 import sys
-from math import sqrt, floor, isinf
+from math import isinf
 from pathlib import Path
 from queue import Queue
 from typing import Tuple
 
 import numpy as np
+import rospkg
 import tqdm
 from PyKDL import JntArray
 
-from iiwa_run.helper.specifications import Specifications
+from iiwa_run.helper.indexer import Indexer
 from iiwa_run.sampling_ik_orchestrator import SamplingIKOrchestrator
 
 
-class Limits:
-    def __init__(self, mi, ma):
-        self.min = mi
-        self.max = ma
-
-        self.delta = ma - mi
-
-    def __call__(self, val):
-        return self.min <= val <= self.max
-
-    def __str__(self):
-        return f"({self.min}->{self.max})"
-
-
-class Indexer:
-    """ Maps the real world xyz coordinates to the indexes for the backing array. """
-
-    def __init__(self, spec: Specifications, res: float):
-        s = spec.rl / sqrt(2)
-        self.res = res
-
-        self.x0, self.y0, self.z0 = spec.rcm
-        self.z0 -= (spec.H1 + spec.H)
-
-        self.xoff = s / 2
-        self.yoff = s / 2
-        self.zoff = 0
-
-        self.xlim = Limits(self.x0 - s / 2, self.x0 + s / 2)
-        self.ylim = Limits(self.y0 - s / 2, self.y0 + s / 2)
-        self.zlim = Limits(self.z0, self.z0 + spec.H)
-
-        self.shape = (
-            int(floor(self.xlim.delta / res)),
-            int(floor(self.ylim.delta / res)),
-            int(floor(self.zlim.delta / res)),
-        )
-
-        self.xilim = Limits(0, self.shape[0] - 1)
-        self.yilim = Limits(0, self.shape[1] - 1)
-        self.zilim = Limits(0, self.shape[2] - 1)
-
-    def is_index_valid(self, xi, yi, zi):
-        return self.xilim(xi) and self.yilim(yi) and self.zilim(zi)
-
-    def index_to_coord(self, xi, yi, zi):
-        if self.xilim(xi) and self.yilim(yi) and self.zilim(zi):
-            return (
-                xi * self.res + self.x0 - self.xoff,
-                yi * self.res + self.y0 - self.yoff,
-                zi * self.res + self.z0 - self.zoff,
-            )
-        raise IndexError(f"{xi}\t{yi}\t{zi}")
-
-    def coord_to_index(self, x, y, z):
-        if self.xlim(x) and self.ylim(y) and self.zlim(z):
-            return (
-                int(floor(((x - self.x0) + self.xoff) / self.res)),
-                int(floor(((y - self.y0) + self.yoff) / self.res)),
-                int(floor(((z - self.z0) + self.zoff) / self.res)),
-            )
-
-        raise IndexError(f"{x}\t{y}\t{z}")
-
-
 class FloodFillCheck(SamplingIKOrchestrator):
-    def __init__(self, resolution=2e-3):
-        super(FloodFillCheck, self).__init__(resolution)
+    def __init__(self, resolution=2e-3, spec_name=None):
+        if spec_name is not None:
+            spec_desc = Path(rospkg.RosPack().get_path('iiwa_run')) / f"run/{spec_name}.yaml"
+        else:
+            spec_desc = None
+        super(FloodFillCheck, self).__init__(resolution, spec_desc=spec_desc)
 
         self.indexer = Indexer(self.spec, self.res)
 
@@ -150,8 +90,32 @@ class FloodFillCheck(SamplingIKOrchestrator):
                 index[ax] -= val
 
 
+class DirectedFloodFill(FloodFillCheck):
+    def add_next(self, ind: Tuple[int, int, int]):
+        center = self.indexer.coord_to_index(self.indexer.x0, self.indexer.y0, self.indexer.z0)
+        index = list(ind)
+
+        for ax in (0, 1, 2):
+            ddl = index[ax] - center[ax]
+            vals = [-1, 1]
+            if ddl < 0:
+                vals.remove(1)
+            elif ddl > 0:
+                vals.remove(-1)
+            for val in vals:
+                index[ax] += val
+                if self.indexer.is_index_valid(*index):
+                    ind_t = tuple(index)
+                    if np.isnan(self.arr[ind_t][0]):
+                        self.frontier.put((ind_t, ind))
+                        self.arr[ind_t][0] = -1
+                index[ax] -= val
+
+
 def main():
-    orc = FloodFillCheck()
+    cls = DirectedFloodFill if len(sys.argv) >= 3 and sys.argv[2] == 'directed' else FloodFillCheck
+    print(f"Using the {cls.__name__}")
+    orc: FloodFillCheck = cls(spec_name=sys.argv[1] if len(sys.argv) >= 2 else None)
     orc.run()
     print("Times solve failed:", np.isnan(orc.arr[:, :, :, 0]).sum())
     print("Times could not sample:", orc.num_sample_out)
