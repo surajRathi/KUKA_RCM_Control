@@ -14,7 +14,6 @@ class JointPlayer:
         self.wall_dt = wall_dt
 
         rospy.init_node(path_player)
-        # joint_pub = rospy.Publisher('/move_group/fake_controller_joint_states', JointState, queue_size=5)
 
         self.joint_pub = rospy.Publisher(joint_topic, JointState, queue_size=5)
 
@@ -77,6 +76,7 @@ def main():
     joints = np.load(filename)
 
     p = JointPlayer()
+    # p = JointPlayer(joint_topic='/move_group/fake_controller_joint_states')
 
     if p.play(joints):
         rospy.loginfo("Path Successfully Played")
