@@ -114,6 +114,7 @@ class FloodFillCheck(SamplingIKOrchestrator):
         self.add_next(self.indexer.coord_to_index(self.indexer.x0, self.indexer.y0, self.indexer.z0))
 
     def run(self):
+        print(f"Running id: {self.spec.id}")
         with tqdm.tqdm(total=self.N, leave=True) as bar:
             bar.update(self.done)
             while not self.frontier.empty():

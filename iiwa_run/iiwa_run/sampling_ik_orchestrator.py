@@ -70,9 +70,19 @@ class SamplingIKOrchestrator:
 
         # Normal Vector in (target - insertion direction
         nn = sqrt(dx ** 2 + dy ** 2 + dz ** 2)
+        if nn < 1e-9:
+            # Normal in the -z direction
+            dz = -1.0
+            nn = 1.0
+
         nx, ny, nz = (dx / nn, dy / nn, dz / nn)
 
         nn = sqrt(ny ** 2 + nx ** 2)
+        if nn < 1e-9:
+            # Axis in the +x direction
+            ny = 1.0
+            nx = 0.0
+            nn = 1.0
 
         q_rot = quaternion_about_axis(angle=acos(-nz), axis=(ny / nn, -nx / nn, 0))
 
