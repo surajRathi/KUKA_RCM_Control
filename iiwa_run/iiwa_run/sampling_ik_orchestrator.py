@@ -15,9 +15,10 @@ from iiwa_run.helper.specifications import from_yaml
 
 
 class SamplingIKOrchestrator:
-    def __init__(self, resolution=2e-3):
+    def __init__(self, resolution=2e-3, spec_desc=None):
         robot_desc = Path(rospkg.RosPack().get_path('iiwa_needle_moveit')) / 'config/gazebo_iiwa7_tool.urdf'
-        spec_desc = Path(rospkg.RosPack().get_path('iiwa_needle_description')) / 'param/world.yaml'
+        if spec_desc is None:
+            spec_desc = Path(rospkg.RosPack().get_path('iiwa_needle_description')) / 'param/world.yaml'
 
         self.spec = from_yaml(spec_desc)
         self.initial_joint_states = self.spec.rest_joint_states
