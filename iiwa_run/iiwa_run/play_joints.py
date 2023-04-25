@@ -1,9 +1,12 @@
 #! /usr/bin/python3
+from sys import argv
+
 import numpy as np
 import rospy
 from geometry_msgs.msg import Point, Quaternion, Vector3
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Header, ColorRGBA
+from tqdm import tqdm
 from visualization_msgs.msg import MarkerArray, Marker
 
 from iiwa_run.helper.specifications import from_param
@@ -51,7 +54,7 @@ class JointPlayer:
         self.viz_pub.publish(marker_array)
 
     def play(self, joints):
-        for joint in joints:
+        for joint in tqdm(joints, leave=False):
             if np.isnan(joint).any():
                 rospy.logerr("Path Contains NaNs, stopping.")
                 break
@@ -72,16 +75,23 @@ class JointPlayer:
 
 
 def main():
-    filename = 'joint_vals.npy'
-    joints = np.load(filename)
-
     p = JointPlayer()
     # p = JointPlayer(joint_topic='/move_group/fake_controller_joint_states')
 
-    if p.play(joints):
-        rospy.loginfo("Path Successfully Played")
-    else:
-        rospy.logwarn("Failed")
+    filename = argv[1] if len(argv) >= 2 else 'joint_vals.npy'
+    if '.' not in filename:
+        filename += '.npy'
+
+    try:
+        joints = np.load(filename)
+        if p.play(joints):
+            rospy.loginfo("Path Successfully Played")
+        else:
+            rospy.logwarn("Failed")
+
+    except IOError as e:
+        # rospy.logerr(f"Could load the file: {filename}")
+        rospy.logerr(e)
 
 
 if __name__ == '__main__':

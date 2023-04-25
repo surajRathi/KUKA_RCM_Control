@@ -1,6 +1,6 @@
 #! /usr/bin/python3
 import time
-from math import isfinite
+from math import isfinite, isnan
 from typing import Tuple
 
 import numpy as np
@@ -31,8 +31,8 @@ class PathToJoints(SamplingIKOrchestrator):
         r = np.linalg.norm(start - center)
         d_theta = self.res / r
 
-        start_angle = np.arctan2(start[2] - center[2], start[1] - center[1])
-        angles = np.arange(start_angle, start_angle + angle, d_theta)
+        start_angle = np.arctan2(start[1] - center[1], start[0] - center[0])
+        angles = np.arange(start_angle, start_angle + angle, d_theta * np.sign(angle))
 
         ret = np.zeros((angles.shape[0], 3))
         ret[:, 0] = r * np.cos(angles)
@@ -73,13 +73,13 @@ def main():
     joints = pc.run(path)
     t_end = time.time()
 
-    def index(array, item) -> Tuple[int, ...]:
+    def nan_index(array, item) -> Tuple[int, ...]:
         for idx, val in np.ndenumerate(array):
-            if val == item:
+            if isnan(val):
                 return idx
         return tuple([-1] * len(array.shape))
 
-    if (i := index(joints, np.nan)) != -1:
+    if (i := nan_index(joints, np.nan))[0] == -1:  # If there are no nans
         print(f"Path Successfully found in {(t_end - t_start) * 1000:.0f}ms.")
         print(f"n_inner: {pc.num_inner}")
 
@@ -89,10 +89,10 @@ def main():
         ))
         print(f"Mean TJDs: {tjd_s.mean():.4f}")
 
-        np.save('joint_vals.npy', joints)
+        np.save(f"run/paths/{pc.spec.id}.npy", joints)
     else:
         print(f"Could not find solution at {i=} of {path.shape[0]}")
-        print(f"Loc: {path[i, :]}")
+        print(f"Loc: {path[i[0] - 10:i[0] + 10, :]}")
 
 
 if __name__ == '__main__':
