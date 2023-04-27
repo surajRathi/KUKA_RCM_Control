@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+COPY_YAML = True
+import shutil
 import sys
 from math import isinf
 from pathlib import Path
@@ -113,9 +115,14 @@ class DirectedFloodFill(FloodFillCheck):
 
 
 def main():
-    cls = DirectedFloodFill if len(sys.argv) >= 3 and sys.argv[2] == 'directed' else FloodFillCheck
+
+    cls = DirectedFloodFill  # if len(sys.argv) >= 3 and sys.argv[2] == 'directed' else FloodFillCheck
+    # cls = FloodFillCheck
     print(f"Using the {cls.__name__}")
     orc: FloodFillCheck = cls(spec_name=sys.argv[1] if len(sys.argv) >= 2 else None)
+    if COPY_YAML:
+        shutil.copy('/home/suraj/ws/src/btp/iiwa_tool/iiwa_needle_description/param/world.yaml',
+                    f"run/{orc.spec.id}.yaml")
     orc.run()
     print("Times solve failed:", np.isnan(orc.arr[:, :, :, 0]).sum())
     print("Times could not sample:", orc.num_sample_out)

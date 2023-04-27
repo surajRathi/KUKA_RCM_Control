@@ -1,4 +1,6 @@
 #! /usr/bin/python3
+COPY_YAML = True
+import shutil
 import time
 from math import isfinite, isnan
 from typing import Tuple
@@ -64,11 +66,85 @@ class PathToJoints(SamplingIKOrchestrator):
 def main():
     pc = PathToJoints()
     # path = pc.get_line_path((0.0, 0, 0), (0.25, 0.0, 0.0))
-    path = np.vstack((
-        pc.get_line_path((0, 0, 0), (0.25, 0.0, 0.0)),
-        pc.get_circle_path((0, 0, 0), (0.25, 0.0, 0.0)),
-        pc.get_line_path((0.25, 0, 0), (0.0, 0.0, 0.0))))
+    # path = np.vstack((
+    #     pc.get_line_path((0, 0, 0), (0.25, 0.0, 0.0)),
+    #     pc.get_circle_path((0, 0, 0), (0.25, 0.0, 0.0)),
+    #     pc.get_line_path((0.25, 0, 0), (0.0, 0.0, 0.0))))
 
+    # edge = (0.25 * np.cos(np.pi / 6), 0.25 * np.sin(np.pi / 6), 0.0)
+    # path = np.vstack((
+    #     pc.get_line_path((0, 0, 0), edge),
+    #     pc.get_circle_path((0, 0, 0), edge),
+    #     pc.get_line_path(edge, (0.0, 0.0, 0.0))))
+
+    # edge = (0.25 * np.cos(np.pi / 6), 0.25 * np.sin(np.pi / 6), 0.0)
+    # path = np.vstack((
+    #     pc.get_line_path((0, 0, 0), edge),
+    #     pc.get_circle_path((0, 0, 0), edge, angle=-np.pi / 6),
+    #     pc.get_line_path((0.25, 0.0, 0.0), (0.0, 0.0, 0.0))))
+
+    # forward_arc_30_0
+    # path = np.vstack((
+    #     pc.get_line_path((0, 0, 0), (0.25, 0.0, 0.0)),
+    #     pc.get_circle_path((0, 0, 0), (0.25, 0.0, 0.0), angle=np.pi / 6),
+    #     pc.get_line_path((0.25 * np.cos(np.pi / 6), 0.25 * np.sin(np.pi / 6), 0.0), (0.0, 0.0, 0.0))))
+
+    # import matplotlib.pyplot as plt
+    # plt.plot(path[:, 0], path[:, 1], label='Original')
+
+    # # go_around_30_0
+    # r_main = 0.25
+    # r_sing = 0.20
+    # r_small = 0.04
+    #
+    # path = np.vstack((
+    #     pc.get_line_path((0, 0, 0), (r_sing - r_small, 0.0, 0.0)),
+    #     pc.get_circle_path((r_sing, 0.0, 0.0), (r_sing - r_small, 0.0, 0.0), angle=-np.pi),
+    #     pc.get_line_path((r_sing + r_small, 0.0, 0.0), (r_main, 0.0, 0.0)),
+    #     pc.get_circle_path((0, 0, 0), (r_main, 0.0, 0.0), angle=np.pi / 6),
+    #     pc.get_line_path((r_main * np.cos(np.pi / 6), r_main * np.sin(np.pi / 6), 0.0), (0.0, 0.0, 0.0))))
+
+    # # go_further_around_30_0
+    # # start at x = 0.13, end at 0.19
+    # r_main = 0.25
+    # r_sing = (0.13 + 0.19) / 2
+    # r_small = (0.19 - 0.13) / 2
+    #
+    # path = np.vstack((
+    #     pc.get_line_path((0, 0, 0), (r_sing - r_small, 0.0, 0.0)),
+    #     pc.get_circle_path((r_sing, 0.0, 0.0), (r_sing - r_small, 0.0, 0.0), angle=-np.pi),
+    #     pc.get_line_path((r_sing + r_small, 0.0, 0.0), (r_main, 0.0, 0.0)),
+    #     pc.get_circle_path((0, 0, 0), (r_main, 0.0, 0.0), angle=np.pi / 6),
+    #     pc.get_line_path((r_main * np.cos(np.pi / 6), r_main * np.sin(np.pi / 6), 0.0), (0.0, 0.0, 0.0))))
+
+    # n_go_further_around_30_0
+    # start at x = 0.13, end at 0.19
+    r_main = 0.25
+    r_sing = (0.13 + 0.19) / 2
+    r_small = (0.19 - 0.13) / 2
+
+    path = np.tile(np.vstack((
+        pc.get_line_path((0, 0, 0), (r_sing - r_small, 0.0, 0.0)),
+        pc.get_circle_path((r_sing, 0.0, 0.0), (r_sing - r_small, 0.0, 0.0), angle=-np.pi),
+        pc.get_line_path((r_sing + r_small, 0.0, 0.0), (r_main, 0.0, 0.0)),
+        pc.get_circle_path((0, 0, 0), (r_main, 0.0, 0.0), angle=np.pi / 6),
+        pc.get_line_path((r_main * np.cos(np.pi / 6), r_main * np.sin(np.pi / 6), 0.0), (0.0, 0.0, 0.0)))), (10, 1))
+
+    # # n_forward_arc_30_0
+    # path = np.tile(np.vstack((
+    #     pc.get_line_path((0, 0, 0), (0.25, 0.0, 0.0)),
+    #     pc.get_circle_path((0, 0, 0), (0.25, 0.0, 0.0), angle=np.pi / 6),
+    #     pc.get_line_path((0.25 * np.cos(np.pi / 6), 0.25 * np.sin(np.pi / 6), 0.0), (0.0, 0.0, 0.0)))), (10, 1))
+
+    # import matplotlib.pyplot as plt
+    # plt.plot(path[:, 0], path[:, 1], '--', label='Modified')
+    # plt.legend()
+    # plt.show()
+    # return
+
+    if COPY_YAML:
+        shutil.copy('/home/suraj/ws/src/btp/iiwa_tool/iiwa_needle_description/param/world.yaml',
+                    f"run/paths/{pc.spec.id}.yaml")
     t_start = time.time()
     joints = pc.run(path)
     t_end = time.time()
@@ -89,7 +165,9 @@ def main():
         ))
         print(f"Mean TJDs: {tjd_s.mean():.4f}")
 
+        np.save(f"run/paths/path_{pc.spec.id}.npy", path)
         np.save(f"run/paths/{pc.spec.id}.npy", joints)
+
     else:
         print(f"Could not find solution at {i=} of {path.shape[0]}")
         print(f"Loc: {path[i[0] - 10:i[0] + 10, :]}")

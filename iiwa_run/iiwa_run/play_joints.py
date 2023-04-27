@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+from pathlib import Path
 from sys import argv
 
 import numpy as np
@@ -18,10 +19,12 @@ class JointPlayer:
 
         rospy.init_node(path_player)
 
+        self.spec = from_param()
+
         self.joint_pub = rospy.Publisher(joint_topic, JointState, queue_size=5)
 
         self.viz_pub = rospy.Publisher(viz_topic, MarkerArray, queue_size=1, latch=True)
-        self.show_rcm()
+        self.path_m = None
 
         self.active_joints = [
             'iiwa_joint_1',
@@ -34,8 +37,7 @@ class JointPlayer:
         ]
 
     def show_rcm(self):
-        spec = from_param()
-
+        spec = self.spec
         # RCM
         m = Marker()
         m.header.frame_id = "Insertion_Pose"
@@ -50,8 +52,29 @@ class JointPlayer:
         m.color = ColorRGBA(r=1, g=0, b=0, a=0.5)
 
         marker_array = MarkerArray()
-        marker_array.markers = [m]
+        marker_array.markers = [m] + ([] if self.path_m is None else [self.path_m])
         self.viz_pub.publish(marker_array)
+
+    def show_path(self, path):
+        assert path.shape[1] == 3
+        m = Marker()
+        m.header.stamp = rospy.Time.now()
+        m.ns = "viz1"
+        m.id = 17
+        m.type = Marker.LINE_STRIP
+        m.action = Marker.ADD
+        m.header.frame_id = "RCM"
+
+        m.pose.position = Point(x=0, y=0, z=-(self.spec.H1 + self.spec.H))
+        m.pose.orientation = Quaternion(w=1)
+
+        m.points = [Point(*pt) for pt in path]
+        print(len(m.points))
+
+        m.scale = Vector3(x=0.005)
+        m.color = ColorRGBA(r=0.0, g=1.0, b=0, a=0.5)
+
+        self.path_m = m
 
     def play(self, joints):
         for joint in tqdm(joints, leave=False):
@@ -82,8 +105,26 @@ def main():
     if '.' not in filename:
         filename += '.npy'
 
+    pt = Path(filename)
+    if not pt.exists():
+        rospy.logfatal(f"Could not find the file at: {pt}")
+        return
+
+    path_pt = pt.parent / ('path_' + pt.stem + '.npy')
+
+    if path_pt.exists():
+        try:
+            path = np.load(path_pt)
+            p.show_path(path)
+            rospy.loginfo(f"Showing path at: {path_pt.name}")
+        except IOError as e:
+            # rospy.logerr(f"Could load the file: {filename}")
+            rospy.logerr(e)
+
     try:
-        joints = np.load(filename)
+        p.show_rcm()
+        joints = np.load(pt)
+
         if p.play(joints):
             rospy.loginfo("Path Successfully Played")
         else:
