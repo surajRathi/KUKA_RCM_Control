@@ -121,8 +121,10 @@
     \newgeometry{left=1.5in,right=1in,top=1in,bottom=0.667in}
     \acknowledgements
 
-% TODO: Acknowledgementss
-    \lipsum[1]
+    I would like to thank my guides, Dr.\ Nirav Patel, Dept of Engineering Design, and Dr.\ Sathyan Subbiah, Dept. of Mechanical Engineering for their guidance and support throughout this project.
+    Nirav Sir has been supporting me on every aspect of my work from day one, providing valuable experience from his long career.
+    Whenever we are at a fork in the road, sir has always been able to provide valuable insights on which direction to proceed.
+    I am forever grateful for the knowledge I gained while working under him.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -130,8 +132,7 @@
 
     \abstract
 
-% TODO: Abstract and Keywords
-    \noindent KEYWORDS: \hspace*{0.5em} \parbox[t]{4.4in}{abc; ahds; hags.}
+    \noindent KEYWORDS: \hspace*{0.5em} \parbox[t]{4.4in}{Path Planning; Inverse Kinematics; KUKA LBR iiwa R800}
 
     \vspace*{24pt}
     \noindent
@@ -172,7 +173,6 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Abbreviations
-% TODO: Abbreviations
     \newpage
     \begin{tabbing}
 
@@ -191,11 +191,11 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Notation
-% TODO: Notations
 
     \chapter*{\centerline{NOTATIONS}}
     \addcontentsline{toc}{chapter}{NOTATIONS}
 
+    TODO: Notations
     \begin{singlespace}
         \begin{tabbing}
             xxxxxxxxxxx \= xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx \kill
@@ -223,7 +223,7 @@
     \section{Motivation}\label{sec:motiv}
     Laparoscopic surgery, commonly know as `keyhole' surgery, is a procedure where a surgeon accesses the inside of
     the abdomen and pelvis without having to make a large incision.
-    We are attempting to use a LBR iiwa 7~[\cite{AG}] arm produced by KUKA, which is a 7DOF robotic arm, to perform such a surgery.  % TODO: Add a reference?
+    We are attempting to use a LBR iiwa 7~[\cite{AG}] arm produced by KUKA, which is a 7DOF robotic arm, to perform such a surgery.
 
     In this surgery, a small incision is made on the skin, and the surgical instruments are manipulated through that incision.
     We have model this as a cylindrical, and later circular, shape.
@@ -250,7 +250,7 @@
     We must note that these planners are optimized for a general purpose use case.
     Our robot is very simple, and when it is inside the RCM, we observed that the links do not collide with each-other we do not require all the complexities and features of these full scale planners.
 
-    % TODO: go into detail about different planners?
+    \emph{TODO: go into detail about different planners?}
 
     A second technique can be used, wherein if we can generate a path in task space (i.e. in the coordinates of the tip of the end-effector),
     we can use Inverse Kinematics (IK) to generate the required joint angles in configuration space. This approach generally has the following problems.
@@ -351,11 +351,16 @@
         \item No large jumps in solutions because of the gradient based nature of the technique
     \end{enumerate}
 
-    The final guarantee that needs to be shown, is that we must be able to find an IK solution at all points.
+    The final guarantee that still needs to be shown, is that we must be able to find an IK solution at all points in the workspace.
+    Firstly, based on the RCM constrataint model, we can take the workspace as the combination of a cone with its apex at the RCM
+    and axis along the vertical and a spherical cap with its center as the cone's apex.
     With the RCM constraint, we have a limited workspace area, so we can discretize the workspace and check whether a
     solution can be found.
+
+    TODO: Add images of the workspace
+
     We used an implementation of floodfill to iterate through all states in the workspace, starting from an initial state
-    and use the IK solver to calculate a solution and store the total change in joint angle.
+    and use the IK solver to calculate a solution and store the total change in joint angle, position error, and orientation error.
     The IK solver is seeded from the IK solution of the previous state.
     The implementation with a FIFO queue ensures that for a given state, the IK solution is seeded by that of a state which is closer to the starting point.
 
@@ -367,6 +372,43 @@
 
     \subsection{Simple Implementation}
 
+    As input to the IK routine, we need to provide a 6DOF pose.
+    This consists of the end effector's cartesian position and orientation.
+    The cartesian position is provided to us as the input to the algorithm (target point).
+    This leaves us with 3DOF from the orientation to implement the RCM constraint.
+    As seen in figure \ref{fig:target_orientation}, we've taken a ray from the center of the upper face of the RCM to the target point.
+    We then find the smallest rotation transforming a coordinate axis such that the x axis will lie along that vector.
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.5 \linewidth]{./img/target_orientation}
+        \caption{The black vector shows the required orientation of the end effector. The pink cylinder represents the RCM constraint.}
+        \label{fig:target_orientation}
+    \end{figure}
+
+
+    In ROS, rotations between two coordinate frames are represented as quaternions.
+    We need to find the quaternion that represents the minimum rotation between the base frame and the target frame.
+    See figure \ref{fig:coordinate_frames} for reference.
+    Let $\vec{O}$ represent the center of the upper face of the cylinder and $\vec{t}$ represent the target position.
+    From equation \ref{eqn:final_q}, we can get the final expression for the orientation as a quaternion.
+
+    \begin{align}
+        \vec{d} &= \vec{t} - \vec{O} \\
+        \vec{l} &= \frac{(0, 0, -1) \times \vec{d}}{|\vec{d}|} \\
+        \theta &= \arccos{\left(\frac{(0, 0, -1) \cdot \vec{d}}{|\vec{d}|}\right)} \\
+        \mathbf{q} &= \cos{\frac{\theta}{2}} + \left(l_x \mathbf{i} + l_y \mathbf{j} + l_z \mathbf{k} + \right) \sin{\frac{\theta}{2}} \label{eqn:final_q}
+    \end{align}
+
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.5 \linewidth]{./img/coordinate_frames}
+        \caption{The set of red, green, and blue line segments represent the x, y, and z axes of a coordinate frame.
+        The upper frame is the frame of reference (base frame) for the target frame.}
+        \label{fig:coordinate_frames}
+    \end{figure}
+
     \subsection{Sampling Based Implementation}
 
 
@@ -375,12 +417,12 @@
 
     \section{Feasibility of Inverse Kinematics Based Methods}
 
-    % TODO: Reachability Graphs (3d heatmap)
+    TODO: Reachability Graphs (3d heatmap)
 
 
     \section{Sampling Based Implementation of the RCM Constraint}
 
-    % TODO: Comparision of perfromance along a path
+    TODO: Comparision of perfromance along a path
 
 
     \chapter{CONCLUSION}\label{ch:conclusion}
@@ -388,7 +430,7 @@
 
     \section{Conclusion}
 
-    % TODO: feasibility of IK, our sampling did not work future sampling based improvements, better RCM modelling
+    TODO: feasibility of IK, our sampling did not work future sampling based improvements, better RCM modelling
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -399,7 +441,7 @@
 
     \chapter{Accessing and Running the Package} \label{ch:code}
 
-    % TODO:
+    TODO:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Bibliography.
 

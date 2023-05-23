@@ -1,4 +1,9 @@
-#!/usr/bin/python3
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5 \linewidth]{/home/suraj/Documents/abhiyaan/ros/src/btp/report/img/coordinate_frames}
+    \caption{The RGB lines represent a coordinate system. The upper set is the base frame and the lower set is the target frame. We need to find the rotation to define the lower frame with respect to the upper frame.}
+    \label{fig:coordinate_frames}
+\end{figure}#!/usr/bin/python3
 import sys
 import time
 from copy import deepcopy
