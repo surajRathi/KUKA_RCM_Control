@@ -27,6 +27,8 @@
 \usepackage[driverfallback=dvipdfm]{hyperref} % hyperlinks for references.
 \usepackage{amsmath} % easier math formulae, align, subequations \ldots
 \ProvideTextCommand{\DJ}{OT1}{\raisebox{0.25ex}{-}\kern-0.4em D}
+\usepackage{paracol}
+
 \begin{document}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -61,29 +63,43 @@
 
     \vspace*{1.5in}
 
-    \begin{singlespacing}
-        \hspace*{-0.25in}
-        \parbox{2.5in}{
-            \noindent {\bf Dr.\ Nirav Patel} \\
-            \noindent Research Guide \\
-            \noindent \textit{Assistant Professor} \\
-            \noindent Dept. of Engineering Design\\
-            \noindent IIT-Madras, 600 036
-        }
-        \hspace*{1.56in}
+    \begin{paracol}{2}
+        \begin{singlespacing}
+            \hspace*{-0.25in}
+            \parbox{2.5in}{
+                \noindent {\bf Dr.\ Nirav Patel} \\
+                \noindent Research Guide \\
+                \noindent \textit{Assistant Professor} \\
+                \noindent Dept. of Engineering Design\\
+                \noindent IIT-Madras, 600 036
+            }
+            \hspace*{1.56in}
 
-        \vspace*{0.3in}
-        \noindent Place: Chennai\\
-        Date: 25$^{\textnormal{th}}$ May 2023
+            \vspace*{0.3in}
+            \noindent Place: Chennai\\
+            Date: 25$^{\textnormal{th}}$ May 2023
 
-    \end{singlespacing}
+        \end{singlespacing}
 
-% TODO: Add co-guide!
-% \noindent {\bf Dr.\ Sathyan Subbiah} \\
-% \noindent Research Guide \\
-% \noindent \textit{Professor} \\
-% \noindent Dept. of Mechanical Engineering\\
-% \noindent IIT-Madras, 600 036 \\
+        \switchcolumn
+        \begin{singlespacing}
+            \hspace*{-0.25in}
+            \parbox{2.5in}{
+                \noindent {\bf Dr.\ Sathyan Subbiah} \\
+                \noindent Research Guide \\
+                \noindent \textit{Professor} \\
+                \noindent Dept. of Mechanical Engineering\\
+                \noindent IIT-Madras, 600 036
+            }
+            \hspace*{1.56in}
+
+            \vspace*{0.3in}
+            \noindent Place: Chennai\\
+            Date: 25$^{\textnormal{th}}$ May 2023
+
+        \end{singlespacing}
+
+    \end{paracol}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -105,7 +121,13 @@
 
     \vspace*{24pt}
     \noindent
-    \lipsum[2]
+    In this project we attempt to build a realtime path planner satisfying a remote center of motion constraint.
+    After ensuring the method will converge to a solution, the optimization objective is to minimize the total joint motion and to enforce motion limits on each joint.
+    We set up a simulation using Open Robotics’ Gazebo to conduct our experiments in conjunction with the ROS platform.
+    We worked to identify the challenges faced by planning in task space using Inverse-Kinematics.
+    Sampling based methods were then used to improve the performance.
+    Our work demonstrates the effectiveness of task space Inverse-Kinematics based methods.
+
 
 
     \pagebreak
@@ -181,230 +203,83 @@
 % Introduction.
 
 
-    \chapter{INTRODUCTION}\label{intro}
+    \chapter{INTRODUCTION}\label{ch:intro}
 
-%
-%This document provides a simple template of how the provided
-%\verb+iitmdiss.cls+ \LaTeX\ class is to be used.  Also provided are
-%several useful tips to do various things that might be of use when you
-%write your thesis.
-%
-%Before reading any further please note that you are strongly advised
-%against changing any of the formatting options used in the class
-%provided in this directory, unless you are absolutely sure that it
-%does not violate the IITM formatting guidelines.  \emph{Please do not
-%  change the margins or the spacing.}  If you do change the formatting
-%you are on your own (don't blame me if you need to reprint your entire
-%thesis).  In the case that you do change the formatting despite these
-%warnings, the least I ask is that you do not redistribute your style
-%files to your friends (or enemies).
-%
-%It is also a good idea to take a quick look at the formatting
-%guidelines.  Your office or advisor should have a copy.  If they
-%don't, pester them, they really should have the formatting guidelines
-%readily available somewhere.
-%
-%To compile your sources run the following from the command line:
-%\begin{verbatim}
-%% latex thesis.tex
-%% bibtex thesis
-%% latex thesis.tex
-%% latex thesis.tex
-%\end{verbatim}
-%Modify this suitably for your sources.
-%
-%To generate PDF's with the links from the \verb+hyperref+ package use
-%the following command:
-%\begin{verbatim}
-%% dvipdfm -o thesis.pdf thesis.dvi
-%\end{verbatim}
-%
-%\section{Package Options}
-%
-%Use this thesis as a basic template to format your thesis.  The
-%\verb+iitmdiss+ class can be used by simply using something like this:
-%\begin{verbatim}
-%\documentclass[PhD]{iitmdiss}  
-%\end{verbatim}
-%
-%To change the title page for different degrees just change the option
-%from \verb+PhD+ to one of \verb+MS+, \verb+MTech+ or \verb+BTech+.
-%The dual degree pages are not supported yet but should be quite easy
-%to add.  The title page formatting really depends on how large or
-%small your thesis title is.  Consequently it might require some hand
-%tuning.  Edit your version of \verb+iitmdiss.cls+ suitably to do this.
-%I recommend that this be done once your title is final.
-%
-%To write a synopsis simply use the \verb+synopsis.tex+ file as a
-%simple template.  The synopsis option turns this on and can be used as
-%shown below.
-%\begin{verbatim}
-%\documentclass[PhD,synopsis]{iitmdiss}                                
-%\end{verbatim}
-%
-%Once again the title page may require some small amount of fine
-%tuning.  This is again easily done by editing the class file.
-%
-%This sample file uses the \verb+hyperref+ package that makes all
-%labels and references clickable in both the generated DVI and PDF
-%files.  These are very useful when reading the document online and do
-%not affect the output when the files are printed.
-%
-%
-%\section{Example Figures and tables}
-%
-%Fig.~\ref{fig:iitm} shows a simple figure for illustration along with
-%a long caption.  The formatting of the caption text is automatically
-%single spaced and indented.  Table~\ref{tab:sample} shows a sample
-%table with the caption placed correctly.  The caption for this should
-%always be placed before the table as shown in the example.
-%
-%
-%\begin{figure}[htpb]
-%  \begin{center}
-%    \resizebox{50mm}{!} {\includegraphics *{iitm.eps}}
-%    \resizebox{50mm}{!} {\includegraphics *{iitm.eps}}
-%    \caption {Two IITM logos in a row.  This is also an
-%      illustration of a very long figure caption that wraps around two
-%      two lines.  Notice that the caption is single-spaced.}
-%  \label{fig:iitm}
-%  \end{center}
-%\end{figure}
-%
-%\begin{table}[htbp]
-%  \caption{A sample table with a table caption placed
-%    appropriately. This caption is also very long and is
-%    single-spaced.  Also notice how the text is aligned.}
-%  \begin{center}
-%  \begin{tabular}[c]{|c|r|} \hline
-%    $x$ & $x^2$ \\ \hline
-%    1  &  1   \\
-%    2  &  4  \\
-%    3  &  9  \\
-%    4  &  16  \\
-%    5  &  25  \\
-%    6  &  36  \\
-%    7  &  49  \\
-%    8  &  64  \\ \hline
-%  \end{tabular}
-%  \label{tab:sample}
-%  \end{center}
-%\end{table}
-%
-%\section{Bibliography with BIB\TeX}
-%
-%I strongly recommend that you use BIB\TeX\ to automatically generate
-%your bibliography.  It makes managing your references much easier.  It
-%is an excellent way to organize your references and reuse them.  You
-%can use one set of entries for your references and cite them in your
-%thesis, papers and reports.  If you haven't used it anytime before
-%please invest some time learning how to use it.  
-%
-%I've included a simple example BIB\TeX\ file along in this directory
-%called \verb+refs.bib+.  The \verb+iitmdiss.cls+ class package which
-%is used in this thesis and for the synopsis uses the \verb+natbib+
-%package to format the references along with a customized bibliography
-%style provided as the \verb+iitm.bst+ file in the directory containing
-%\verb+thesis.tex+.  Documentation for the \verb+natbib+ package should
-%be available in your distribution of \LaTeX.  Basically, to cite the
-%author along with the author name and year use \verb+\cite{key}+ where
-%\verb+key+ is the citation key for your bibliography entry.  You can
-%also use \verb+\citet{key}+ to get the same effect.  To make the
-%citation without the author name in the main text but inside the
-%parenthesis use \verb+\citep{key}+.  The following paragraph shows how
-%citations can be used in text effectively.
-%
-%More information on BIB\TeX\ is available in the book by
-%\cite{lamport:86}.  There are many
-%references~\citep{lamport:86,prabhu:xx} that explain how to use
-%BIB\TeX.  Read the \verb+natbib+ package documentation for more
-%details on how to cite things differently.
-%
-%Here are other references for example.  \citet{viz:mayavi} presents a
-%Python based visualization system called MayaVi in a conference paper.
-%\citet{pan:pr:flat-fst} illustrates a journal article with multiple
-%authors.  Python~\citep{py:python} is a programming language and is
-%cited here to show how to cite something that is best identified with
-%a URL.
-%
-%\section{Other useful \LaTeX\ packages}
-%
-%The following packages might be useful when writing your thesis.
-%
-%\begin{itemize}  
-%\item It is very useful to include line numbers in your document.
-%  That way, it is very easy for people to suggest corrections to your
-%  text.  I recommend the use of the \texttt{lineno} package for this
-%  purpose.  This is not a standard package but can be obtained on the
-%  internet.  The directory containing this file should contain a
-%  lineno directory that includes the package along with documentation
-%  for it.
-%
-%\item The \texttt{listings} package should be available with your
-%  distribution of \LaTeX.  This package is very useful when one needs
-%  to list source code or pseudo-code.
-%
-%\item For special figure captions the \texttt{ccaption} package may be
-%  useful.  This is specially useful if one has a figure that spans
-%  more than two pages and you need to use the same figure number.
-%
-%\item The notation page can be entered manually or automatically
-%  generated using the \texttt{nomencl} package.
-%
-%\end{itemize}
-%
-%More details on how to use these specific packages are available along
-%with the documentation of the respective packages.
+
+    \section{Motivation}\label{sec:motiv}
+    Laparoscopic surgery, commonly know as `keyhole' surgery, is a procedure where a surgeon accesses the inside of
+    the abdomen and pelvis without having to make a large incision.
+    We are attempting to use a LBR iiwa 7~\cite{AG} arm produced by KUKA, which is a 7DOF robotic arm, to perform such a surgery.  % TODO: Add a reference?
+
+    In this surgery, a small incision is made on the skin, and the surgical instruments are manipulated through that incision.
+    We have model this as a cylindrical, and later circular, shape.
+    The endeffector must always enter through the upper circular face and exit through the lower circular face.
+    It must always pass through some volume of the cylinder and cannot intersect with the curved surface.
+    An illustration can be seen in~\ref{fig:RCM}.
+    This is quite similar to the `Remote Center of Motion' (RCM) constraint and henceforth, when we use the term RCM we will be referring to the aforementioned constraint.
+
+    \begin{figure}
+        \centering
+        \includegraphics[height= 0.5\textwidth]{./img/rcm-constraint}
+        \caption{A depiction of the Laproscopic surgery constraint as implemented in our work. The orange and gray objects are part of the robotic arm and the red cylinder represents the volume through which the end-effector must always pass.}
+        \label{fig:RCM}
+    \end{figure}
+
+    We wished to implement a real-time path planner that can satisfy the RCM constraint.
+
+
+    \section{Survey of Existing Methods}
+
+    \subsection{Path Planners}
+    Our survey of existing planning methods was primarily done by surveying the available algorithms in ROS MoveIT \cite{Coleman_Sucan_Chitta_Correll_2014}.
+    This library provides a unified frontend to various motion planners and integrates wil the FCL collision checker, and with simulation and visualization software through the ROS framework.
+    We must note that these planners are optimized for a general purpose use case.
+    Our robot is very simple, and when it is inside the RCM, we observed that the links do not collide with each-other we do not require all the complexities and features of these full scale planners.
+
+    % TODO: go into detail about different planners?
+
+    A second technique can be used, wherein if we can generate a path in task space (i.e. in the coordinates of the tip of the end-effector),
+    we can use Inverse Kinematics (IK) to generate the required joint angles in configuration space. This approach generally has the following problems.
+    \begin{enumerate}
+        \item Solving the IK problem may be slow
+        \item There may be no IK solution for a given pose
+        \item The IK solution will not be unique
+        \item There may be large jumps in IK solutions between two consecutive points in the path.
+    \end{enumerate}
+
+    The Kinematics and Dynamics Library (KDL)~\cite{kdl-url} is default solver used by MoveIT for solving forward and inverse kinematics problems.
+    We can also use the IKFast algorithm to generate analytical solutions for a given robot configuration.
+
+    \subsection{7DOF Robot Control}
+
+    Another challenge with working with this robot is its the over-actuated nature.
+    To control the six DOF of the end-effector pose, we need to specify the joint angle of seven actuators.
+    This leaves us with one extra DOF.
+    In literature, we have seen others use that DOF to implement better obstacle avoidance~\cite{Doliwa_2020} and lock a single joint to get closed form kinematics~\cite{Asthana}
+
+
+    \section{Objectives}
+
+
+    \chapter{METHODOLGY}\label{ch:introm}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Appendices.
 
-
-    \chapter{abc}\label{lit}
-
-
-    \section{title}
-
-    \subsection{title}
-
-    use \citep{r1} or \cite{r2} or \citet{r1} for citing references
-
-
-    \chapter{sfr}\label{basics}
-
-
-
-
     \appendix
 
-%\chapter{MATLAB code for polymer network creation} \label{code}
 
-%Just put in text as you would into any chapter with sections and whatnot.  Thats the end of it.
+    \chapter{MATLAB code for polymer network creation} \label{code}
+
+    Just put in text as you would into any chapter with sections and whatnot. Thats the end of it.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Bibliography.
 
     \begin{singlespace}
-        \bibliography{references_sample}
+        \bibliography{thesis_template}
+        \bibliographystyle{abbrv}
     \end{singlespace}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% List of papers
-
-    \listofpapers
-
-    \begin{enumerate}
-        \item auth1, auth2, ... . Paper title. {\em Journal}, vol,
-        2120--2127, (2014).
-        \item
-    \end{enumerate}
-    \centering{\Large{\textbf{PRESENTATIONS IN CONFERENCES}}}
-
-    \begin{enumerate}
-        \item Presentation type\\ {auth}, auth1. {title}. {\textit{conf name}}, place, date.
-        \item
-    \end{enumerate}
 
 \end{document}
