@@ -15,7 +15,6 @@
 %\usepackage[paper=a4paper,left=1.5in,right=1in,top=1in,bottom=0.667in,nohead]{geometry}
 \usepackage{float}
 \usepackage{t1enc}
-\newcommand{\angstrom}{\textup{\AA}}
 \usepackage{wrapfig}
 \usepackage{graphicx}
 \usepackage{epstopdf}
@@ -28,6 +27,21 @@
 \usepackage{amsmath} % easier math formulae, align, subequations \ldots
 \ProvideTextCommand{\DJ}{OT1}{\raisebox{0.25ex}{-}\kern-0.4em D}
 \usepackage{paracol}
+\usepackage{subfig}
+\usepackage{siunitx}
+
+
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.15}
+\usepackage{mathrsfs}
+\usepackage{color}
+\usetikzlibrary{arrows}
+\newcommand{\degre}{\ensuremath{^\circ}}
+
+\definecolor{cqcqcq}{rgb}{0.7529411764705882,0.7529411764705882,0.7529411764705882}
+\definecolor{ffqqqq}{rgb}{1,0,0}
+
+
 
 \begin{document}
 
@@ -209,7 +223,7 @@
     \section{Motivation}\label{sec:motiv}
     Laparoscopic surgery, commonly know as `keyhole' surgery, is a procedure where a surgeon accesses the inside of
     the abdomen and pelvis without having to make a large incision.
-    We are attempting to use a LBR iiwa 7~\cite{AG} arm produced by KUKA, which is a 7DOF robotic arm, to perform such a surgery.  % TODO: Add a reference?
+    We are attempting to use a LBR iiwa 7~[\cite{AG}] arm produced by KUKA, which is a 7DOF robotic arm, to perform such a surgery.  % TODO: Add a reference?
 
     In this surgery, a small incision is made on the skin, and the surgical instruments are manipulated through that incision.
     We have model this as a cylindrical, and later circular, shape.
@@ -231,7 +245,7 @@
     \section{Survey of Existing Methods}
 
     \subsection{Path Planners}
-    Our survey of existing planning methods was primarily done by surveying the available algorithms in ROS MoveIT \cite{Coleman_Sucan_Chitta_Correll_2014}.
+    Our survey of existing planning methods was primarily done by surveying the available algorithms in ROS MoveIT [\cite{Coleman_Sucan_Chitta_Correll_2014}].
     This library provides a unified frontend to various motion planners and integrates wil the FCL collision checker, and with simulation and visualization software through the ROS framework.
     We must note that these planners are optimized for a general purpose use case.
     Our robot is very simple, and when it is inside the RCM, we observed that the links do not collide with each-other we do not require all the complexities and features of these full scale planners.
@@ -247,7 +261,7 @@
         \item There may be large jumps in IK solutions between two consecutive points in the path.
     \end{enumerate}
 
-    The Kinematics and Dynamics Library (KDL)~\cite{kdl-url} is default solver used by MoveIT for solving forward and inverse kinematics problems.
+    The Kinematics and Dynamics Library (KDL)~[\cite{kdl-url}] is default solver used by MoveIT for solving forward and inverse kinematics problems.
     We can also use the IKFast algorithm to generate analytical solutions for a given robot configuration.
 
     \subsection{7DOF Robot Control}
@@ -255,13 +269,126 @@
     Another challenge with working with this robot is its the over-actuated nature.
     To control the six DOF of the end-effector pose, we need to specify the joint angle of seven actuators.
     This leaves us with one extra DOF.
-    In literature, we have seen others use that DOF to implement better obstacle avoidance~\cite{Doliwa_2020} and lock a single joint to get closed form kinematics~\cite{Asthana}
+    In literature, we have seen others use that DOF to implement better obstacle avoidance~[\cite{Doliwa_2020}] and lock a single joint to get closed form kinematics~[\cite{Asthana}]
 
 
     \section{Objectives}
 
+    \begin{enumerate}
+        \item Build a simulated environment using the KUKA LBR iiwa 7 with the RCM constraint in Gazebo and integrate it with the ROS MoveIT framework.
+        \item Identify challenges with implementing the RCM constraint using task-space planning and Inverse Kinematics.
+        \item Implement and test the effectiveness of a sampling based technique to minimize the joint motion along the path.
+    \end{enumerate}
 
-    \chapter{METHODOLGY}\label{ch:introm}
+
+    \chapter{METHODOLGY}\label{ch:method}
+
+
+    \section{Simulation Building}
+
+    We built our simulation using the Gazebo~[\cite{gazebo-url}] simulator.
+    It is a widely-used open-source robotics simulator that provides a realistic 3D environment for developing and testing robot algorithms.
+
+    We used~\cite{hennersperger2017towards} as the basis of the simulated environment and added a needle shaped end-effector and a ellipsoidal model of an abdomen.
+    The initial simulation environment is seen in \ref{fig:initial_simulation_models}.
+    The `abdomen' model enforces the RCM constraint.
+
+    \begin{figure}%
+        \centering
+        \subfloat[\centering End Effector]{{\includegraphics[height=0.25 \linewidth]{./img/initial_endeffector}}}%
+        \qquad
+        \subfloat[\centering Abdomen]{{\includegraphics[height=0.25 \textwidth]{./img/initial_abdomen}}}%
+        \qquad
+        \subfloat[\centering Visualization]{{\includegraphics[height=0.25 \textwidth]{./img/initial_sim_env_viz}}}%
+        \caption{The initial models for use in simulation}
+        \label{fig:initial_simulation_models}
+    \end{figure}
+
+    The models were slowly changed as the project progressed to better model the problem of Laparoscopic surgery.
+    The dimensions of the end effector were changed to a length of \SI{350}{\milli\meter} and base radius of \SI{2}{\milli\meter} (\ref{fig:longer_ee}).
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.75 \linewidth]{./img/longer_end_effector}
+        \caption{The longer end effector.}
+        \label{fig:longer_ee}
+    \end{figure}
+
+    Another major change in the simulation was to change the cylindrical RCM \ref{fig:rcm_cylinder} to a circular RCM \ref{fig:rcm_circle}.
+    The circular model can be represented as the cylindrical model where the height of the cylinder is 0.
+
+    \begin{figure}
+        \centering
+        \input{./img/rcm_cylinder.txt}
+        \caption{The original RCM model. The red region represents the RCM and the gray region represents the end effector.}
+        \label{fig:rcm_cylinder}
+    \end{figure}
+
+    \begin{figure}
+        \centering
+        \input{./img/rcm_circle.txt}
+        \caption{The new RCM model. The red region represents the RCM and the gray region represents the end effector.}
+        \label{fig:rcm_circle}
+    \end{figure}
+
+    With this setup, we were able to run the full ROS MoveIT planning stack with generic algorithms.
+    However, using the mesh as a constraint for the RCM is extremely slow, and this naive approach would not run in real-time.
+
+
+    \section{Inverse Kinematics}
+
+    As is used by ROS MoveIT, we leveraged the KDL library for solving the forward and inverse kinematic models.
+    Do note that we are using a patched version of the pyKDL library, see Appendix~\ref{ch:code}.
+
+    The KDL library uses an implementation of `Differential Inverse Kinematics'.
+    In this method the SVD decomposition of the Jacobian is used to calculate the configuration space velocity for a given task space velocity.
+    With this, the Newton-Raphson method is used to find an IK solution (configuration-space state) given a prior state.
+
+    We found that in practice, this method provided the following:
+    \begin{enumerate}
+        \item Real-time solutions to the IK problem.
+        \item A deterministic and unique IK solution.
+        \item No large jumps in solutions because of the gradient based nature of the technique
+    \end{enumerate}
+
+    The final guarantee that needs to be shown, is that we must be able to find an IK solution at all points.
+    With the RCM constraint, we have a limited workspace area, so we can discretize the workspace and check whether a
+    solution can be found.
+    We used an implementation of floodfill to iterate through all states in the workspace, starting from an initial state
+    and use the IK solver to calculate a solution and store the total change in joint angle.
+    The IK solver is seeded from the IK solution of the previous state.
+    The implementation with a FIFO queue ensures that for a given state, the IK solution is seeded by that of a state which is closer to the starting point.
+
+    If the joint values at each point were of small enough magnitude, then we get a weak guarantee of it possible to find an IK solution at each point.
+    The guarantee is weak as we are only checking from an initial point outwards, not from any point A to another adjacent point.
+
+
+    \section{RCM Implementation}
+
+    \subsection{Simple Implementation}
+
+    \subsection{Sampling Based Implementation}
+
+
+    \chapter{RESULTS}\label{ch:results}
+
+
+    \section{Feasibility of Inverse Kinematics Based Methods}
+
+    % TODO: Reachability Graphs (3d heatmap)
+
+
+    \section{Sampling Based Implementation of the RCM Constraint}
+
+    % TODO: Comparision of perfromance along a path
+
+
+    \chapter{CONCLUSION}\label{ch:conclusion}
+
+
+    \section{Conclusion}
+
+    % TODO: feasibility of IK, our sampling did not work future sampling based improvements, better RCM modelling
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -270,10 +397,9 @@
     \appendix
 
 
-    \chapter{MATLAB code for polymer network creation} \label{code}
+    \chapter{Accessing and Running the Package} \label{ch:code}
 
-    Just put in text as you would into any chapter with sections and whatnot. Thats the end of it.
-
+    % TODO:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Bibliography.
 
