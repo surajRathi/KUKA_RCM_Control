@@ -4,3 +4,4 @@
 iiwa_run/run
 *-checkpoint.ipynb
 *.swp
+/report/out/
