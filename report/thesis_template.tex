@@ -80,7 +80,7 @@
             \hspace*{-0.25in}
             \parbox{2.5in}{
                 \noindent Place: Chennai\\
-            Date: 25$^{\textnormal{th}}$ May 2023
+                Date: 25$^{\textnormal{th}}$ May 2023
             }
         \end{singlespacing}
 
@@ -224,24 +224,23 @@
 
     \pagebreak
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Notation
-
-    \chapter*{\centerline{NOTATIONS}}
-    \addcontentsline{toc}{chapter}{NOTATIONS}
-
-    TODO: Notations
-    \begin{singlespace}
-        \begin{tabbing}
-            xxxxxxxxxxx \= xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx \kill
-            $F$ \>  Force (N)\\
-            $\delta$ \> Displacement (m)\\
-
-        \end{tabbing}
-    \end{singlespace}
-
-    \pagebreak
-    \clearpage
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % Notation
+%
+%     \chapter*{\centerline{NOTATIONS}}
+%     \addcontentsline{toc}{chapter}{NOTATIONS}
+%
+%     \begin{singlespace}
+%         \begin{tabbing}
+%             xxxxxxxxxxx \= xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx \kill
+%             $F$ \>  Force (N)\\
+%             $\delta$ \> Displacement (m)\\
+%
+%         \end{tabbing}
+%     \end{singlespace}
+%
+%     \pagebreak
+%     \clearpage
 
 % The main text will follow from this point so set the page numbering
 % to arabic from here on.
@@ -285,8 +284,6 @@
     We must note that these planners are optimized for a general purpose use case.
     Our robot is very simple, and when it is inside the RCM, we observed that the links do not collide with each-other we do not require all the complexities and features of these full scale planners.
 
-    \emph{TODO: go into detail about different planners?}
-
     A second technique can be used, wherein if we can generate a path in task space (i.e. in the coordinates of the tip of the end-effector),
     we can use Inverse Kinematics (IK) to generate the required joint angles in configuration space. This approach generally has the following problems.
     \begin{enumerate}
@@ -316,15 +313,21 @@
     \end{enumerate}
 
 
-    \section{Risk Assessment}
+    \section{Risk Assessment}\label{sec:risk}
 
-    TODO: Fill this
+    The algorithm has been developed and tested on a simulated environment built in Gazebo.
+    We have not taken any extra measures to ensure the reliable operation on real hardware.
+    The above algorithm has also only been tested on the given workspace configuration.
+    Results may vary with different robot models, workspace positioning, and RCM placement.
+    The modeled RCM may not accurately resemble the characteristics in real life.
 
 
     \section{Resource Requirements}
     The following resources were used to complete this work:
     \begin{itemize}
-        \item TODO: Fill this
+        \item ROS Catkin Environment
+        \item Gazebo Simulator
+        \item (If Possible for testing) KUKA LBR iiwa R800
     \end{itemize}
 
 
@@ -340,13 +343,13 @@
     The initial simulation environment is seen in \ref{fig:initial_simulation_models}.
     The `abdomen' model enforces the RCM constraint.
 
-    \begin{figure}%
+    \begin{figure}
         \centering
-        \subfloat[\centering End Effector]{{\includegraphics[height=0.25 \linewidth]{./img/initial_endeffector}}}%
+        \subfloat[\centering End Effector]{{\includegraphics[height=0.25 \linewidth]{./img/initial_endeffector}}}%=
         \qquad
         \subfloat[\centering Abdomen]{{\includegraphics[height=0.25 \textwidth]{./img/initial_abdomen}}}%
         \qquad
-        \subfloat[\centering Visualization]{{\includegraphics[height=0.25 \textwidth]{./img/initial_sim_env_viz}}}%
+        \subfloat[\centering Visualization]{{\includegraphics[height=0.25 \textwidth]{./img/initial_sim_env_viz}}}
         \caption{The initial models for use in simulation}
         \label{fig:initial_simulation_models}
     \end{figure}
@@ -367,14 +370,14 @@
     \begin{figure}
         \centering
         \input{./img/rcm_cylinder.txt}
-        \caption{The original RCM model. The red region represents the RCM and the gray region represents the end effector.}
+        \caption{The original cylindrical RCM model. The red region represents the RCM and the gray region represents the end effector.}
         \label{fig:rcm_cylinder}
     \end{figure}
 
     \begin{figure}
         \centering
         \input{./img/rcm_circle.txt}
-        \caption{The new RCM model. The red region represents the RCM and the gray region represents the end effector.}
+        \caption{The new circular RCM model. The red region represents the RCM and the gray region represents the end effector.}
         \label{fig:rcm_circle}
     \end{figure}
 
@@ -401,11 +404,19 @@
     The final guarantee that still needs to be shown, is that we must be able to find an IK solution at all points in the workspace.
     Firstly, based on the RCM constrataint model, we can take the workspace as the combination of a cone with its apex at the RCM
     and axis along the vertical and a spherical cap with its center as the cone's apex.
-    With the RCM constraint, we have a limited workspace area, so we can discretize the workspace and check whether a
+    With the RCM constraint, we have a limited workspace area (figure \ref{fig:workspaces}), so we can discretize the workspace and check whether a
     solution can be found.
 
-    TODO: Add images of the workspace
-
+    \begin{figure}
+        \centering
+        \subfloat[\centering First Test]{{\includegraphics[height=0.25 \linewidth]{./img/initial_workspace}}}%=
+        \qquad
+        \subfloat[\centering Long Needle Test]{{\includegraphics[height=0.25 \textwidth]{./img/long_needle_ws}}}%
+        \qquad
+        \subfloat[\centering Final Workspace]{{\includegraphics[height=0.25 \textwidth]{./img/final_ws}}}
+        \caption{The workspace defined for each test. The cone is the reachable volume, and the cylinder represents the region we considered in our experiments.}
+        \label{fig:workspaces}
+    \end{figure}
     We used an implementation of floodfill to iterate through all states in the workspace, starting from an initial state
     and use the IK solver to calculate a solution and store the total change in joint angle, position error, and orientation error.
     The IK solver is seeded from the IK solution of the previous state.
@@ -459,6 +470,8 @@
 
     \subsection{Sampling Based Implementation}
 
+    % TODO: Add an image showing different samples
+
     In section~\ref{subsec:simple-rcm-impl} we have taken an arbitrary point in the RCM through which the center of our
     end-effector must pass through.
     However, we know that the end effector can pass through any point in the upper face,
@@ -488,7 +501,7 @@
         \vec{Q'} &= \vec{Q} - (\vec{P} - \vec{Q}) * \frac{t}{P_z - Q_z} \\
         d_{upper} &= (R - |\vec{Q} - \vec{O}|) * \frac{|(\vec{P} - \vec{Q}) \times (\vec{O} - \vec{Q})|}{|\vec{P} - \vec{Q}| |\vec{O} - \vec{Q}|} \\
         d_{lower} &= (R - |\vec{Q'} - \vec{O'}|) * \frac{|(\vec{P} - \vec{Q'}) \times (\vec{O'} - \vec{Q'})|}{|\vec{P} - \vec{Q'}| |\vec{O'} - \vec{Q'}|} \\
-        is_{valid} &= (d_{upper} > r) \land (d_{lower} > r)\label{eqn:cylinder_cons}
+        \text{is\_valid} &= (d_{upper} > r) \land (d_{lower} > r)\label{eqn:cylinder_cons}
     \end{align}
 
     When we later shifted to a circular constraint, we used just $d_{upper}$.
@@ -498,13 +511,130 @@
     \chapter{RESULTS}\label{ch:results}
 
 
-    \section{Feasibility of Inverse Kinematics Based Methods}
+    \section{Feasibility of Inverse Kinematics Based Methods}\label{sec:flood_fill}
 
-    Show the reachability
+    The primary test conducted over the course of this project was to check whether IK would succeed over all points in a given workspace.
+    We tested this for a variety of configurations of different needle lengths, workspace locations, RCM configurations, and number of samples.
+    The most important results are shown below.
 
-    Show the speed
+    In the following tests, the mentioned algorithm was used to compute the joint angles for each point in the workspace.
+    The IK algorithm was seeded by the closest point in the direction of the starting point.
+    The computation was started from the bottom center of the workspace, and a breadth-first search like algorithm (floodfill)
+    was used to iteratively cover each point in the workspace.
+    The total difference in the joint angles from the seed point, position error, and orientation error were stored.
 
-    TODO: Reachability Graphs (3d heatmap)
+
+
+
+    \emph{First Test:} In this test, we used a short needle and a small (restrictive) RCM\@.
+    The test showed that the algorithm was able to find a solution at every point in the workspace.
+    Figure~\ref{fig:initial_test} shows the distribution of the joint motion angles as a box and whisker plot.
+    We wish to minimize this value to ensure a smoother path.
+    The experiment had a maximum joint motion of \SI{2.58}{\degre}, maximum position error on the order of \SI{e-15}{\meter},
+    and a maximum orientation error of \SI{e-6}{\degre}.
+    This shows that for this case, the IK algorithm is well-equipped to provide path planning solutions.
+
+    \begin{figure}
+
+        \centering
+        \subfloat[\centering Workspace]{{ \includegraphics[width=0.35 \linewidth]{./img/initial_workspace}}}
+        \qquad
+        \subfloat[\centering Joint Angle Distribution]{{ \includegraphics[width=0.35 \linewidth]{./img/exp_1_boxplot}}}
+        \centering
+        \caption{The results from the `First Test'.}
+        \label{fig:initial_test}z
+    \end{figure}
+
+    We tested the results with the following four configurations with different number of samples:
+    \begin{enumerate}
+        \item ``No Sampling''
+        \item ``Sample, No Collision'': Sampling without RCM Collision Checking
+        \item ``Sampling''
+        \item ``Sample Center First'': Sampling with the center of the RCM as the first sample.
+    \end{enumerate}
+    We found that there was almost a negligible difference in techniques 2, 3, and 4.
+    The resulting plots can be seen in figure \ref{fig:sampling_techniques}.
+    There was a clear improvement in performance with number of samples (figure \ref{fig:initial_num_samples}),
+    but the base case of no samples out performed each sampling based technique.
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.8 \linewidth]{./img/sampling_techniques}
+        \caption{The performance of different sampling techniques for `First Test'.}
+        \label{fig:sampling_techniques}
+    \end{figure}
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.8 \linewidth]{./img/initial_num_samples}
+        \caption{For `First Test', the performance with number of samples.}
+        \label{fig:initial_num_samples}
+    \end{figure}
+
+    \emph{Long Needle Test:} The above experiment was then repeated with a longer end-effector to more accurately model the surgical procedure.
+    The results (figure \ref{fig:long_needle_box}) were similar to the `First Test' but there was a large set of failures  (table \ref{tab:failure_rate}).
+    We notice that the failure rate does seem to decrease with the number of samples, but is still unacceptably large.
+    \begin{table}[h]
+        \centering
+        \begin{tabular}{|c|c|c|c|}
+            \hline
+            Number of Samples & None  & 10    & 100   \\ \hline
+            Failure Rate (\%) & 19.20 & 19.15 & 19.02 \\ \hline
+        \end{tabular}
+        \caption{The failure rate with number of samples for the `Long Needle Test'.}
+        \label{tab:failure_rate}
+    \end{table}
+    To better understand the failures, we plotted a 3d heatmap where the color of the cell indicates the total joint motion required to reach it from its neighbor.
+    In figure \ref{fig:long_heatmap}. We can see that the failures are all seen on one side of the workspace on a smooth surface.
+    We postulated that they could be caused due to incorrect workspace placement with respect to the robotic arm.
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.5 \linewidth]{/home/suraj/Documents/abhiyaan/ros/src/btp/report/img/long_needle_box}
+        \caption{The results of the `Long Needle Test'.}
+        \label{fig:long_needle_box}
+    \end{figure}
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.5 \linewidth]{/home/suraj/Documents/abhiyaan/ros/src/btp/report/img/long_heatmap}
+        \caption{The distribution of total joint motion across the workspace for the `Long Needle Test'.}
+        \label{fig:long_heatmap}
+    \end{figure}
+
+
+    \emph{Shifted RCM Test:} We shifted the RCM to lie directly in front of the zero-angle position of the zeroth joint.
+    This eliminated the problem we faced in the previous test.
+    However, we found another region of very high joint in the form of a thin curved cylindrical region (Figure~\ref{fig:prefinal_heat}).
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.5 \linewidth]{/home/suraj/Documents/abhiyaan/ros/src/btp/report/img/prefinal_heat}
+        \caption{Results for the `Shifted RCM Test'.}
+        \label{fig:prefinal_heat}
+    \end{figure}
+
+    By visual inspection of the visualization, we found that this was caused by the robotic arm reaching a wrist joint singularity (Figure \ref{fig:wrist_singularity}).
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.4 \linewidth]{/home/suraj/Documents/abhiyaan/ros/src/btp/report/img/wrist_singularity}
+        \caption{The robot in a wrist joint singularity state}
+        \label{fig:wrist_singularity}
+    \end{figure}
+
+    \emph{Alternative Pose Test:} As the robot is an overactuated manipulator, there are an infinite combination of joint angles that
+    can produce the same end-effector position.
+    We had chosen an arbitrary state for the zero state in the workspace.
+    We conducted this test (Figure \ref{fig:newpose}) with an alternate set of joint angles as the zero state and found
+    that it brought down the joint motion by two to three times on average, and the problematic region had greatly reduced.
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.5 \linewidth]{/home/suraj/Documents/abhiyaan/ros/src/btp/report/img/newpose}
+        \caption{The results with a different starting pose. Note that this figure has a different scale than the others.}
+        \label{fig:newpose}
+    \end{figure}
 
 
     \section{Sampling Based Implementation of the RCM Constraint}
@@ -513,13 +643,40 @@
     TODO: comparison of performance along a path, look into
 
 
+    \section{Runtime}
+
+    By running large number of iterations and finding the average time spent (Figure \ref{fig:runtime}), we found that our algorithm can run in
+    realtime.
+    We have also foud that the position precision of the algorithm is well within the robot's repeatability.
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.6 \linewidth]{/home/suraj/Documents/abhiyaan/ros/src/btp/report/img/runtime}
+        \caption{The speed at which the algorithm can be run on a Ryzen5 machine.}
+        \label{fig:runtime}
+    \end{figure}
+
+
     \chapter{CONCLUSION}\label{ch:conclusion}
 
 
     \section{Conclusion}
 
-    TODO: feasibility of IK, our sampling did not work future sampling based improvements, better RCM modelling
+    Through the course of this work, we have found that Inverse Kinematics based methods are feasible for realtime path planning with the
+    `Restricted Center of Motion' constraint and could possibly be used for Laparoscopic Surgery Robots.
+    It is important to correctly position the robot with respect to the workspace.
 
+
+    \section{Limitations and Future Work}
+
+    The limitations of this work are already covered in section~\ref{sec:risk}.
+
+    \noindent In the future, work must be carried out to look into the following.
+    \begin{itemize}
+        \item  an analytical model for points within the RCM that do not lead to a collision with the curved surface.
+        (step two in figure \ref{fig:sampling_flowchart}).
+        \item Look into the effect of starting pose on the experiments done in section \ref{sec:flood_fill}.
+        \item Further understand and find techniques to mitigate the effect of singularities in the system.
+    \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Appendices.
