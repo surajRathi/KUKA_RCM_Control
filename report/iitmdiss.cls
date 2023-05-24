@@ -243,6 +243,24 @@ a4paper,left=1.5in,right=1in,top=1in,bottom=0.667in,
      \setcounter{page}{0}
    }
 
+   % DECLERATION
+   \def\declaration{%% A preliminary chapter
+     \clearpage
+     \vspace*{36pt}
+     \centerline{\Large \bf DECLARATION}
+     \vskip 25pt
+     \thispagestyle{empty}
+     \typeout{DECLARATION}
+     \setcounter{page}{0}
+   }
+
+
+   % ACKNOWLEDGEMENTS
+   %
+   \def\acknowledgements{\chapter*{\centerline{ACKNOWLEDGEMENTS}}
+     \addcontentsline{toc}{chapter}{ACKNOWLEDGEMENTS}
+   }
+
    % ACKNOWLEDGEMENTS
    %
    \def\acknowledgements{\chapter*{\centerline{ACKNOWLEDGEMENTS}}
