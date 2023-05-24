@@ -35,6 +35,7 @@
 \pgfplotsset{compat=1.15}
 \usepackage{mathrsfs}
 \usepackage{color}
+\usepackage{csquotes}
 \usetikzlibrary{arrows}
 \newcommand{\degre}{\ensuremath{^\circ}}
 
@@ -76,7 +77,7 @@
 
 
     \begin{paracol}{2}
-            \vspace*{1.0in}
+        \vspace*{1.0in}
         \begin{singlespacing}
             \hspace*{-0.25in}
             \parbox{2.5in}{
@@ -472,7 +473,7 @@
         \label{fig:coordinate_frames}
     \end{figure}
 
-    \subsection{Sampling Based Implementation}
+    \subsection{Sampling Based Implementation}\label{sec:sampling_rcm}
 
     % TODO: Add an image showing different samples
 
@@ -643,15 +644,51 @@
 
     \section{Sampling Based Implementation of the RCM Constraint}
 
-    show the paths taken, show the
-    TODO: comparison of performance along a path, look into
+    We assesed the performance of the sampling based algorithm discussed in section~\ref{sec:sampling_rcm} by
+    comparing the path generated without sampling to that with sampling.
+    We initially tested this on a straight line path (figure \ref{fig:straight_path}), and found no improvement with the algorithm.
+    In fact, we found that the generated path was much less smooth.
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.8 \linewidth]{/home/suraj/Documents/abhiyaan/ros/src/btp/report/img/straight_path}
+        \caption{The joint motion required for a straight line path with differnt number of samples.}
+        \label{fig:straight_path}
+    \end{figure}
+
+    When we encountered the high joint angles due to the singularity in `Shifted RCM Test', we tested the planner with
+    different number of samples along that path and along a slightly offset path (figure \ref{fig:ikpaths}).
+    From the results in the figures~\ref{fig:forward_arc} and~\ref{fig:go_around},
+    we can see that the sampling made the path worse when compared to no sampling,
+    but within the sampling cases, a greater number of samples increased the path quality.
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.6 \linewidth]{/home/suraj/Documents/abhiyaan/ros/src/btp/report/img/ik_path_comparision}
+        \caption{The paths along which the algorithm was tested. The center of the semicircle is the position of the singularity in this section.}
+        \label{fig:ikpaths}
+    \end{figure}
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.6 \linewidth]{/home/suraj/Documents/abhiyaan/ros/src/btp/report/img/forward_arc}
+        \caption{Change in joint angle along the original path. Blue - no sampling, orange - 100 samples, green - 1000 samples.}
+        \label{fig:forward_arc}
+    \end{figure}
+
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.6 \linewidth]{/home/suraj/Documents/abhiyaan/ros/src/btp/report/img/go_around}
+        \caption{Change in joint angle along the modified path.}
+        \label{fig:go_around}
+    \end{figure}
 
 
     \section{Runtime}
 
-    By running large number of iterations and finding the average time spent (Figure \ref{fig:runtime}), we found that our algorithm can run in
+    By running a large number of iterations and finding the average time spent (Figure \ref{fig:runtime}), we found that our algorithm can run in
     realtime.
-    We have also foud that the position precision of the algorithm is well within the robot's repeatability.
+    We have also found that the position precision of the algorithm is well within the robot's repeatability.
     \begin{figure}
         \centering
         \includegraphics[width=0.6 \linewidth]{/home/suraj/Documents/abhiyaan/ros/src/btp/report/img/runtime}
@@ -667,7 +704,9 @@
 
     Through the course of this work, we have found that Inverse Kinematics based methods are feasible for realtime path planning with the
     `Restricted Center of Motion' constraint and could possibly be used for Laparoscopic Surgery Robots.
-    It is important to correctly position the robot with respect to the workspace.
+
+    We found that the sampling technique we used to optimize the path did not bring about any improvements in the path.
+    The greedy, single-step nature of the optimization is not useful in this use case.
 
 
     \section{Limitations and Future Work}
@@ -676,10 +715,12 @@
 
     \noindent In the future, work must be carried out to look into the following.
     \begin{itemize}
-        \item  an analytical model for points within the RCM that do not lead to a collision with the curved surface.
-        (step two in figure \ref{fig:sampling_flowchart}).
-        \item Look into the effect of starting pose on the experiments done in section \ref{sec:flood_fill}.
+        \item We should develop a more faithful model of the RCM that takes into account its elastic nature.
+        \item An analytical model for points within the RCM that do not lead to a collision with the curved surface.
+        (step two in figure~\ref{fig:sampling_flowchart}).
+        \item Look into the effect of starting pose on the experiments done in section~\ref{sec:flood_fill}.
         \item Further understand and find techniques to mitigate the effect of singularities in the system.
+        \item We can look into multistep optimization techniques to better optimize a path with the RCM constraint.
     \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -690,7 +731,25 @@
 
     \chapter{Accessing and Running the Package} \label{ch:code}
 
-    TODO:
+    The source code for this work can be retried from Dr. Nirav Patel's lab at IIT Madras or at \texttt{https://github.com/surajRathi/KUKA\_RCM\_Control}
+    To run this on Ubunutu 20.04, you need to install a patched version of the PyKDL library which can also be retrieved from Dr. Nirav's Lab.
+
+    Run the following commands within a catkin workspace extended from an installation of ROS Noetic to correctly setup the package:
+
+
+    \indent\texttt{git clone --recursive 'https:/github.com/surajRathi/KUKA\_RCM\_Control.git'}
+
+
+    \indent\texttt{
+        rosdep install --from-paths ./ --ignore-src catkin build iiwa\_needle\_moveit iiwa\_needle\_description iiwa\_tool\_description iiwa\_hw iiwa\_description iiwa\_gazebo iiwa\_moveit iiwa\_ros iiwa\_msgs iiwa\_control iiwa\_run
+    }
+
+
+    The files in the \texttt{iiwa\_run} package and the scripts in the same package are intended to be run.
+
+    Please see the package for any further documentation.
+
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Bibliography.
 
