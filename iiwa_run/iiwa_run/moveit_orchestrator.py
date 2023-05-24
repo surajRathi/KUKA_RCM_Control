@@ -29,7 +29,7 @@ INITIAL_HEIGHT = 0.100
 SECOND_HEIGHT = 0.000
 FIRST_DEPTH = 0.15677301355073126
 NEEDLE_LENGTH = 0.300
-FIRST_TRANSLATION = 0.05
+FIRST_TRANSLATION = 0.25
 
 
 class MoveitFailure(Exception):
@@ -334,7 +334,7 @@ def get_target_orientation(insertion_pose, target_point) -> Quaternion:
 
 def main():
     orc = MoveitOrchestrator()
-    insertion_routine(orc)
+    interior_motion_routine(orc)
 
 
 if __name__ == '__main__':

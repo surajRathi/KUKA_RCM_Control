@@ -1,0 +1,23 @@
+\begin{tikzpicture}[line cap=round,line join=round,>=triangle 45,x=0.5cm,y=0.5cm]
+\clip(-4.930750287924278,-4.87110675316288) rectangle (15.592026006506662,8.490530578956005);
+\fill[line width=2pt,color=ffqqqq,fill=ffqqqq,fill opacity=0.18] (0,0) -- (12,0) -- (12,2) -- (0,2) -- cycle;
+\fill[line width=1.2pt,color=cqcqcq,fill=cqcqcq,fill opacity=1] (7.997007270716059,4.393667341716672) -- (-4.247116518696645,-2.3933613018428685) -- (4.0332484230222825,-2.3768963368195744) -- (16.247668629244004,4.393667341716672) -- cycle;
+\draw [shift={(6,1)},line width=1.2pt,fill=black,fill opacity=0.10000000149011612] (0,0) -- (-151.00000000007196:0.5676512592076643) arc (-151.00000000007196:-90:0.5676512592076643) -- cycle;
+\draw [line width=1.2pt,color=ffqqqq] (0,0)-- (12,0);
+\draw [line width=1.2pt,color=ffqqqq] (12,0)-- (12,2);
+\draw [line width=1.2pt,color=ffqqqq] (12,2)-- (0,2);
+\draw [line width=1.2pt,color=ffqqqq] (0,2)-- (0,0);
+\draw [line width=1.2pt,dash pattern=on 1pt off 1pt] (6,3)-- (6,-1);
+\draw [line width=1.2pt,dash pattern=on 1pt off 1pt] (12.122337949980032,4.393667341716672)-- (-0.12233794998003233,-2.3936673417166716);
+\draw [line width=1.2pt] (7.997007270716059,4.393667341716672)-- (-4.247668629244005,-2.3936673417166716);
+\draw [line width=1.2pt] (16.247668629244004,4.393667341716672)-- (4.002992729283941,-2.3936673417166716);
+\draw [line width=1.2pt,color=cqcqcq] (7.997007270716059,4.393667341716672)-- (-4.247116518696645,-2.3933613018428685);
+\draw [line width=1.2pt,color=cqcqcq] (-4.247116518696645,-2.3933613018428685)-- (4.0332484230222825,-2.3768963368195744);
+\draw [line width=1.2pt,color=cqcqcq] (4.0332484230222825,-2.3768963368195744)-- (16.247668629244004,4.393667341716672);
+\draw [line width=1.2pt,color=cqcqcq] (16.247668629244004,4.393667341716672)-- (7.997007270716059,4.393667341716672);
+\begin{scriptsize}
+% \draw[color=ffqqqq] (7.841403044248169,-0.3408130498709378) node {$12$};
+% \draw[color=ffqqqq] (-0.3677074735242068,1.1874788018420066) node {$2$};
+% \draw[color=black] (5.679961711111293,-0.166151123960887) node {$\alpha = 61\textrm{\degre}$};
+\end{scriptsize}
+\end{tikzpicture}

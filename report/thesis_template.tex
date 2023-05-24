@@ -281,6 +281,18 @@
     \end{enumerate}
 
 
+    \section{Risk Assessment}
+
+    TODO: Fill this
+
+
+    \section{Resource Requirements}
+    The following resources were used to complete this work:
+    \begin{itemize}
+        \item TODO: Fill this
+    \end{itemize}
+
+
     \chapter{METHODOLGY}\label{ch:method}
 
 
@@ -370,7 +382,7 @@
 
     \section{RCM Implementation}
 
-    \subsection{Simple Implementation}
+    \subsection{Simple Implementation}\label{subsec:simple-rcm-impl}
 
     As input to the IK routine, we need to provide a 6DOF pose.
     This consists of the end effector's cartesian position and orientation.
@@ -392,6 +404,7 @@
     See figure \ref{fig:coordinate_frames} for reference.
     Let $\vec{O}$ represent the center of the upper face of the cylinder and $\vec{t}$ represent the target position.
     From equation \ref{eqn:final_q}, we can get the final expression for the orientation as a quaternion.
+    In the implementation we have had add support for special cases where this expression can approach $\infty$.
 
     \begin{align}
         \vec{d} &= \vec{t} - \vec{O} \\
@@ -411,18 +424,58 @@
 
     \subsection{Sampling Based Implementation}
 
+    In section~\ref{subsec:simple-rcm-impl} we have taken an arbitrary point in the RCM through which the center of our
+    end-effector must pass through.
+    However, we know that the end effector can pass through any point in the upper face,
+    as long as the end-effector will not intersect with the curved surface of the cylinder.
+    We can then choose the point to minimize an optimization criterion.
+
+    As the IK solver is a non-analytical technique, we cannot find an analytical solution for this technique.
+    Instead, we can attempt to find the best point by random sampling. The process can be seen in figure \ref{fig:sampling_flowchart}.
+
+    \begin{figure}
+        \centering
+
+        \input{./img/sampling_flowchart.txt}
+
+        \caption{Flowchart depicting the Sampling based RCM implementation.}
+        \label{fig:sampling_flowchart}
+    \end{figure}
+
+    A mathematical representation of the RCM constraints was developed for the cylindrical and circular case.
+    Let the center of the upper face of the RCM be denoted by $\vec{O}$, the point we have chosen on the upper face be $\vec{P}$,
+    the radius of the RCM $R$, the radius of the end-effector $r$, and the thickness of the RCM be $t$.
+    The equation \ref{eqn:cylinder_cons} lays out the required condition for a cylindrical constraint.
+    In the implementation, we have taken care to handle the cases where we are dividing by the norm of a very small vector.
+
+    \begin{align}
+        \vec{O'} &= \vec{O} + (0, 0, -t) \\
+        \vec{Q'} &= \vec{Q} - (\vec{P} - \vec{Q}) * \frac{t}{P_z - Q_z} \\
+        d_{upper} &= (R - |\vec{Q} - \vec{O}|) * \frac{|(\vec{P} - \vec{Q}) \times (\vec{O} - \vec{Q})|}{|\vec{P} - \vec{Q}| |\vec{O} - \vec{Q}|} \\
+        d_{lower} &= (R - |\vec{Q'} - \vec{O'}|) * \frac{|(\vec{P} - \vec{Q'}) \times (\vec{O'} - \vec{Q'})|}{|\vec{P} - \vec{Q'}| |\vec{O'} - \vec{Q'}|} \\
+        is_{valid} &= (d_{upper} > r) \land (d_{lower} > r)\label{eqn:cylinder_cons}
+    \end{align}
+
+    When we later shifted to a circular constraint, we used just $d_{upper}$.
+    The calls to the underlying vector mathematics library (numpy) were manually inlined and unrolled to increase speed.
+
 
     \chapter{RESULTS}\label{ch:results}
 
 
     \section{Feasibility of Inverse Kinematics Based Methods}
 
+    Show the reachability
+
+    Show the speed
+
     TODO: Reachability Graphs (3d heatmap)
 
 
     \section{Sampling Based Implementation of the RCM Constraint}
 
-    TODO: Comparision of perfromance along a path
+    show the paths taken, show the
+    TODO: comparison of performance along a path, look into
 
 
     \chapter{CONCLUSION}\label{ch:conclusion}

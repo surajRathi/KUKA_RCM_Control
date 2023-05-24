@@ -1,0 +1,22 @@
+\definecolor{8717d0d1-8b22-504b-b813-3d90cda76c98}{RGB}{179, 209, 255}
+\definecolor{f3551e38-74df-57e2-b793-83d7fe876c85}{RGB}{0, 0, 0}
+\definecolor{0b71a967-1f15-55a5-9bb9-70efa7b4fc58}{RGB}{51, 51, 51}
+\definecolor{747aec21-333b-59ee-84e3-ddff893e5ccd}{RGB}{255, 216, 176}
+\definecolor{5856d031-3da1-575c-834e-c77e9e438c62}{RGB}{162, 177, 195}
+
+\tikzstyle{0b370d2b-5a34-5234-a4fd-0ab4d82206ea} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, font=\normalsize, color=0b71a967-1f15-55a5-9bb9-70efa7b4fc58, draw=f3551e38-74df-57e2-b793-83d7fe876c85, line width=1, fill=8717d0d1-8b22-504b-b813-3d90cda76c98]
+\tikzstyle{27437e67-9b34-5aec-9a46-e8b95f63a13b} = [rectangle, minimum width=4cm, minimum height=1cm, text centered, font=\normalsize, color=0b71a967-1f15-55a5-9bb9-70efa7b4fc58, draw=f3551e38-74df-57e2-b793-83d7fe876c85, line width=1, fill=747aec21-333b-59ee-84e3-ddff893e5ccd]
+\tikzstyle{5eae87bb-8260-5d4e-afce-724f977fa1ff} = [rectangle, minimum width=4cm, minimum height=1cm, text centered, font=\normalsize, color=0b71a967-1f15-55a5-9bb9-70efa7b4fc58, draw=f3551e38-74df-57e2-b793-83d7fe876c85, line width=1, fill=8717d0d1-8b22-504b-b813-3d90cda76c98]
+\tikzstyle{7be24b85-97d0-5b76-ba9e-d94005dca8f2} = [thick, draw=5856d031-3da1-575c-834e-c77e9e438c62, line width=2, ->, >=stealth]
+
+\begin{tikzpicture}[node distance=2cm]
+    \node (055b5c5c-6b0e-4e0e-ac72-f9226718b2d4) [0b370d2b-5a34-5234-a4fd-0ab4d82206ea] {Target Point};
+    \node (774bc79a-0f15-46eb-8cfb-fae026ad2431) [27437e67-9b34-5aec-9a46-e8b95f63a13b, below of=055b5c5c-6b0e-4e0e-ac72-f9226718b2d4] {Sample Points on the Upper Surface};
+    \node (e976504d-5dbc-4fbc-96e2-8a5a3e723c5a) [27437e67-9b34-5aec-9a46-e8b95f63a13b, below of=774bc79a-0f15-46eb-8cfb-fae026ad2431] {Reject Points where the RCM is Violated};
+    \node (6d62ae80-2d5a-4b0c-bba3-5e0d268498d2) [27437e67-9b34-5aec-9a46-e8b95f63a13b, below of=e976504d-5dbc-4fbc-96e2-8a5a3e723c5a] {Compute IK Solutions for each Case};
+    \node (ac30e6a1-8d9e-4fae-b5ee-6d976acc47c2) [5eae87bb-8260-5d4e-afce-724f977fa1ff, below of=6d62ae80-2d5a-4b0c-bba3-5e0d268498d2] {Choose the Optimal Solution};
+    \draw [7be24b85-97d0-5b76-ba9e-d94005dca8f2] (055b5c5c-6b0e-4e0e-ac72-f9226718b2d4) --  (774bc79a-0f15-46eb-8cfb-fae026ad2431);
+    \draw [7be24b85-97d0-5b76-ba9e-d94005dca8f2] (774bc79a-0f15-46eb-8cfb-fae026ad2431) --  (e976504d-5dbc-4fbc-96e2-8a5a3e723c5a);
+    \draw [7be24b85-97d0-5b76-ba9e-d94005dca8f2] (e976504d-5dbc-4fbc-96e2-8a5a3e723c5a) --  (6d62ae80-2d5a-4b0c-bba3-5e0d268498d2);
+    \draw [7be24b85-97d0-5b76-ba9e-d94005dca8f2] (6d62ae80-2d5a-4b0c-bba3-5e0d268498d2) --  (ac30e6a1-8d9e-4fae-b5ee-6d976acc47c2);
+\end{tikzpicture}

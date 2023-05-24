@@ -1,0 +1,13 @@
+\begin{tikzpicture}[line cap=round,line join=round,>=triangle 45,x=0.5cm,y=0.5cm]
+\clip(-4.575804715711167,-5.790320382170415) rectangle (16.378960089362486,7.85256904411162);
+\draw [shift={(6,0)},line width=1.2pt,fill=black,fill opacity=0.10000000149011612] (0,0) -- (-159.0000000000521:0.5795998775871437) arc (-159.0000000000521:-90:0.5795998775871437) -- cycle;
+\fill[line width=1.2pt,color=cqcqcq,fill=cqcqcq,fill opacity=0.65] (8.821367619213857,3.225311545900063) -- (-4.226958522588326,-1.7834715773366105) -- (3.1879574906476353,-3.2217319716014914) -- (16.248758351751526,1.7918397477222574) -- cycle;
+\draw [line width=1.2pt,color=ffqqqq] (12,0)-- (0,0);
+\draw [line width=1.2pt,dash pattern=on 1pt off 1pt] (6,3)-- (6,-3);
+\draw [line width=1.2pt,dash pattern=on 1pt off 1pt] (12.535062985482693,2.50857564681116)-- (-0.5350629854826927,-2.50857564681116);
+\draw [line width=1.2pt] (8.821367619213857,3.225311545900063)-- (-4.248758351751528,-1.7918397477222574);
+\draw [line width=1.2pt] (16.248758351751526,1.7918397477222574)-- (3.1786323807861425,-3.225311545900063);
+\begin{scriptsize}
+% \draw[color=black] (5.700946959968572,-0.8748675741717418) node {$\alpha = 69\textrm{\degre}$};
+\end{scriptsize}
+\end{tikzpicture}
